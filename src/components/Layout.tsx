@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { BookOpen, Wallet, Plus, History, PieChart, CalendarDays, Settings as Cog } from 'lucide-react'
 import { href, type Route } from '../router'
 import { useLedger, useUi } from '../store/ledgerStore'
+import { SyncBadge } from './SyncBadge'
 
 const items = [
   { r: { name: 'home' } as Route, label: 'Overview', short: 'Home', icon: BookOpen },
@@ -42,7 +43,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
         <button onClick={add} className="mt-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-ink shadow-soft hover:brightness-110">
           <Plus size={18} /> Add Expense
         </button>
-        <p className="mt-4 px-2 text-center text-[11px] text-faint">Stored only on this device</p>
+        <div className="mt-4 flex justify-center"><SyncBadge /></div>
       </aside>
 
       <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-5 pb-36 pt-6 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
@@ -102,13 +103,13 @@ export function PageHeader({ title, eyebrow, right, back }: { title: ReactNode; 
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {right && <div className="hidden items-center gap-2 sm:flex">{right}</div>}
+          <div className="hidden items-center gap-2 sm:flex"><SyncBadge className="lg:hidden" />{right}</div>
           <a href="#/settings" aria-label="Settings" className="grid h-10 w-10 place-items-center rounded-full bg-primary text-[15px] font-semibold text-primary-ink lg:hidden">
             {initial}
           </a>
         </div>
       </div>
-      {right && <div className="mt-4 flex items-center justify-end gap-2 sm:hidden">{right}</div>}
+      <div className="mt-3 flex items-center justify-between gap-2 sm:hidden"><SyncBadge className="-ml-3" /><div className="flex items-center gap-2">{right}</div></div>
     </header>
   )
 }

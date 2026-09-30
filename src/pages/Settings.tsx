@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Download, Upload, FileSpreadsheet, Trash2, Sparkles, Plus, X, ShieldCheck, Smartphone } from 'lucide-react'
+import { Download, Upload, FileSpreadsheet, Trash2, Sparkles, Plus, X, ShieldCheck, Smartphone, RefreshCw, Unlink, ExternalLink, Link2 } from 'lucide-react'
+import { SyncBadge } from '../components/SyncBadge'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { PageHeader } from '../components/Layout'
 import { Button, Confirm, Segmented, Bubble } from '../components/ui'
@@ -13,7 +14,10 @@ import { useInstallPrompt } from '../pwa'
 const CAT_ICONS = ['🐾', '👶', '💄', '🏡', '📚', '🧘', '🍺', '🚗', '🎨', '🛠️', '💼', '🎓', '🧾', '📌']
 
 export function Settings() {
-  const { data, updateSettings, activeAccounts, replaceAll, clearAll, addCategory, deleteCategory } = useLedger()
+  const { data, updateSettings, activeAccounts, replaceAll, clearAll, addCategory, deleteCategory, sync, refresh, disconnect } = useLedger()
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const demo = !!sync.conn?.demo
   const { notify } = useUi()
   const s = data.settings
   const fileRef = useRef<HTMLInputElement>(null)
@@ -36,6 +40,32 @@ export function Settings() {
   return (
     <>
       <PageHeader title="Settings" eyebrow="Kenledger · Version 1.0" />
+
+      <Group title="Google Sheet">
+        {demo ? (
+          <Action icon={<Link2 size={18} />} title="Connect a Google Sheet" body="You're in demo mode — nothing is being saved" onClick={disconnect} />
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold">{sync.meta.spreadsheetName ?? 'Connected sheet'}</p>
+                <p className="text-[12px] text-muted">{sync.lastSynced ? `Last synced ${new Date(sync.lastSynced).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Connected'}</p>
+              </div>
+              <SyncBadge />
+            </div>
+            {sync.syncError && <p className="px-4 py-3 text-[13px] text-neg">{sync.syncError}</p>}
+            {sync.meta.spreadsheetUrl && (
+              <a href={sync.meta.spreadsheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-card-2/50">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-card-2 text-primary"><ExternalLink size={18} /></span>
+                <span><span className="block text-[15px] font-semibold">Open in Google Sheets</span><span className="text-[13px] text-muted">See every transaction in the Transactions tab</span></span>
+              </a>
+            )}
+            <Action icon={<RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />} title="Refresh now" body="Pull changes made on your other devices"
+              onClick={async () => { setRefreshing(true); await refresh(); setRefreshing(false); notify('Up to date') }} />
+            <Action icon={<Unlink size={18} />} title="Disconnect this device" body="Your sheet and data stay untouched" onClick={() => setConfirmDisconnect(true)} />
+          </>
+        )}
+      </Group>
 
       <Group title="Profile">
         <Row label="Your name">
@@ -114,13 +144,13 @@ export function Settings() {
         <Action icon={<Upload size={18} />} title="Import Backup" body="Restore from a .json backup" onClick={() => fileRef.current?.click()} />
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
         <Action icon={<FileSpreadsheet size={18} />} title="Export CSV" body="Open in Google Sheets or Excel" onClick={() => { exportCSV(data); notify('CSV downloaded') }} disabled={!data.transactions.length} />
-        <Action icon={<Sparkles size={18} />} title="Try Demo Data" body="Replace this ledger with sample data" onClick={() => setConfirmDemo(true)} />
-        <Action icon={<Trash2 size={18} />} title="Clear All Data" body="Delete every account and transaction" onClick={() => setConfirmClear(true)} danger />
+        {demo && <Action icon={<Sparkles size={18} />} title="Reset Demo Data" body="Start the demo over" onClick={() => setConfirmDemo(true)} />}
+        <Action icon={<Trash2 size={18} />} title="Clear All Data" body={demo ? "Empty the demo ledger" : "Delete every account and transaction from your sheet"} onClick={() => setConfirmClear(true)} danger />
       </Group>
 
       <div className="mt-5 flex gap-3 rounded-[22px] bg-pos-soft p-4 text-[13px] leading-relaxed text-ink">
         <ShieldCheck size={20} className="shrink-0 text-pos" />
-        <p>Your data is stored locally on this device and never leaves it. Export a backup regularly so you don't lose it — and to move your ledger to another device.</p>
+        <p>{demo ? 'Demo mode: changes live only in this tab and disappear when you close it.' : 'Your ledger lives only in your own Google Sheet — this browser just remembers which sheet to open. Connect any other device with the same Web app URL and secret.'}</p>
       </div>
 
       {install.canInstall && (
@@ -133,13 +163,16 @@ export function Settings() {
       <p className="mt-8 text-center text-[12px] text-faint">Kenledger 1.0 · {data.transactions.length} transactions · {data.accounts.length} accounts</p>
 
       <Confirm open={!!pending} title="Restore backup?" danger={false}
-        body={pending && <>This replaces everything on this device with <b className="text-ink">{pending.accounts.length} accounts</b> and <b className="text-ink">{pending.transactions.length} transactions</b> from the backup.</>}
+        body={pending && <>This replaces everything in your ledger with <b className="text-ink">{pending.accounts.length} accounts</b> and <b className="text-ink">{pending.transactions.length} transactions</b> from the backup.</>}
         confirmLabel="Restore" onCancel={() => setPending(null)}
         onConfirm={() => { replaceAll({ ...pending!, settings: { ...pending!.settings, onboarded: true } }); setPending(null); notify('Backup restored') }} />
+      <Confirm open={confirmDisconnect} title="Disconnect this device?" danger={false}
+        body="Kenledger will forget the sheet link on this browser. Your Google Sheet and all its data stay as they are, and you can reconnect any time."
+        confirmLabel="Disconnect" onCancel={() => setConfirmDisconnect(false)} onConfirm={() => { setConfirmDisconnect(false); disconnect() }} />
       <Confirm open={confirmClear} title="Delete all data?" body="This cannot be undone unless you have a backup." confirmLabel="Delete Everything"
         onCancel={() => setConfirmClear(false)} onConfirm={() => { clearAll(); setConfirmClear(false); window.location.hash = '#/' }} />
-      <Confirm open={confirmDemo} title="Load demo data?" danger={!!data.transactions.length}
-        body={data.transactions.length ? 'This replaces your current ledger. Export a backup first if you want to keep it.' : 'Loads three sample accounts and two months of transactions so you can explore.'}
+      <Confirm open={confirmDemo} title="Reset demo data?" danger={false}
+        body='Loads three sample accounts and two months of transactions again.'
         confirmLabel="Load Demo" onCancel={() => setConfirmDemo(false)}
         onConfirm={() => { replaceAll(demoLedger(s.name || 'Julian')); setConfirmDemo(false); notify('Demo data loaded'); window.location.hash = '#/' }} />
     </>

@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useLedger } from '../store/ledgerStore'
 import { Logo } from '../components/Layout'
 import { Button } from '../components/ui'
 import { ACCOUNT_TYPES } from '../utils/constants'
 import { currencyMeta, parseAmount, money } from '../utils/currency'
-import { demoLedger } from '../services/demo'
 import type { AccountType } from '../types/ledger'
-import { requestPersistence } from '../services/storage'
 
 export function Onboarding() {
-  const { data, updateSettings, addAccount, replaceAll } = useLedger()
+  const { data, updateSettings, addAccount } = useLedger()
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [bal, setBal] = useState('')
@@ -19,7 +17,7 @@ export function Onboarding() {
   const cur = data.settings.currency
   const amount = parseAmount(bal) || 0
 
-  const finish = () => { requestPersistence(); updateSettings({ onboarded: true, name: name.trim() }) }
+  const finish = () => { updateSettings({ onboarded: true, name: name.trim() }) }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">
@@ -33,16 +31,13 @@ export function Onboarding() {
             <div className="mx-auto mb-8 w-fit"><Logo size={72} /></div>
             <p className="eyebrow">Welcome to</p>
             <h1 className="mt-1 text-[40px] font-semibold tracking-tight">Kenledger</h1>
-            <p className="mx-auto mt-3 max-w-[260px] text-[15px] text-muted">A simple place to keep track of your money. Private, and stored only on this device.</p>
+            <p className="mx-auto mt-3 max-w-[260px] text-[15px] text-muted">Your sheet is connected. Let’s set up your first account.</p>
             <div className="card mt-8 p-5 text-left">
               <label className="eyebrow" htmlFor="ob-name">What should we call you?</label>
               <input id="ob-name" autoFocus className="field text-[17px]" placeholder="Your name (optional)" value={name} onChange={(e) => setName(e.target.value)} maxLength={30}
                 onKeyDown={(e) => e.key === 'Enter' && setStep(1)} />
             </div>
             <Button size="lg" className="mt-6 w-full" onClick={() => setStep(1)}>Get Started <ArrowRight size={18} /></Button>
-            <button onClick={() => replaceAll(demoLedger(name.trim() || 'Julian'))} className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
-              <Sparkles size={14} /> Or explore with demo data
-            </button>
           </div>
         )}
 

@@ -13,28 +13,18 @@ export function emptyLedger(): LedgerData {
   }
 }
 
-export function loadLedger(): LedgerData {
+/** Data saved by the earlier browser-only version, if any. Used once to move it into the sheet. */
+export function loadLegacyLocal(): LedgerData | null {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return emptyLedger()
-    return normalize(JSON.parse(raw))
-  } catch {
-    return emptyLedger()
-  }
+    if (!raw) return null
+    const d = normalize(JSON.parse(raw))
+    return d.accounts.length || d.transactions.length ? d : null
+  } catch { return null }
 }
-
-let lastError: string | null = null
-export function saveLedger(data: LedgerData): boolean {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(data))
-    lastError = null
-    return true
-  } catch (e) {
-    lastError = e instanceof Error ? e.message : 'Storage unavailable'
-    return false
-  }
+export function clearLegacyLocal() {
+  try { localStorage.removeItem(KEY) } catch { /* noop */ }
 }
-export const storageError = () => lastError
 
 /** Validates + fills defaults. Throws on clearly invalid input. */
 export function normalize(input: unknown): LedgerData {
@@ -42,7 +32,10 @@ export function normalize(input: unknown): LedgerData {
   const d = input as Partial<LedgerData>
   if (!Array.isArray(d.accounts) || !Array.isArray(d.transactions)) throw new Error('Backup is missing accounts or transactions')
   const base = emptyLedger()
-  const cats = Array.isArray(d.categories) && d.categories.length ? d.categories : base.categories
+  const custom = (Array.isArray(d.categories) ? d.categories : [])
+    .filter((c) => c && (c.custom || String(c.id).startsWith('custom.')))
+    .map((c) => ({ ...c, custom: true }))
+  const cats = [...base.categories, ...custom]
   return {
     version: 1,
     accounts: d.accounts.map((a) => ({ ...a, startingBalance: Number(a.startingBalance) || 0 })),
@@ -54,7 +47,3 @@ export function normalize(input: unknown): LedgerData {
   }
 }
 
-// Ask the browser to keep our storage (helps on mobile Safari/Chrome).
-export function requestPersistence() {
-  try { navigator.storage?.persist?.() } catch { /* noop */ }
-}

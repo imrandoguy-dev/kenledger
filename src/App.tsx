@@ -10,6 +10,7 @@ import { Analytics } from './pages/Analytics'
 import { Calendar } from './pages/Calendar'
 import { Settings } from './pages/Settings'
 import { Onboarding } from './pages/Onboarding'
+import { Connect, Loading, LoadError } from './pages/Connect'
 import { TransactionForm } from './components/TransactionForm'
 import { TransactionDetail } from './components/TransactionDetail'
 import { AccountForm } from './components/AccountForm'
@@ -48,7 +49,7 @@ function useShortcuts() {
 }
 
 function Shell() {
-  const { data, account } = useLedger()
+  const { data, account, sync } = useLedger()
   const { scope, setScope } = useUi()
   const route = useRoute()
   useTheme()
@@ -57,6 +58,9 @@ function Shell() {
   // Drop a stale account filter (e.g. after deleting the account).
   useEffect(() => { if (scope && !account(scope)) setScope('') }, [scope, account, setScope])
 
+  if (sync.status === 'none') return <Connect />
+  if (sync.status === 'loading') return <Loading />
+  if (sync.status === 'error') return <LoadError />
   if (!data.settings.onboarded) return <><Onboarding /><Toaster /></>
 
   let page

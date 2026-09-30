@@ -1,6 +1,6 @@
 # Kenledger
 
-A calm, private notebook for your money. Record expenses across multiple accounts, watch balances update, see where your money went, and print clean reports — all in the browser, no server or database.
+A calm, private notebook for your money. Record expenses across multiple accounts, watch balances update, see where your money went, and print clean reports — and keep everything in your own Google Sheet.
 
 ## Features (MVP)
 
@@ -14,9 +14,10 @@ A calm, private notebook for your money. Record expenses across multiple account
 - Analytics: Week / Month / Year, previous/next period, donut, category breakdown, trend chart, metrics, factual insights, % change vs previous period
 - Calendar heat-map with per-day totals and entries
 - Print report dialog (range, account, category, sections) → browser print / Save as PDF
-- CSV export (Google Sheets-ready), JSON backup + restore, clear all
+- Google Sheet as the only storage, synced across all your devices
+- CSV export, JSON backup + restore, clear all
 - Light / Dark / System theme (dark is designed, not inverted)
-- PWA: installable, works offline
+- PWA: installable
 - Keyboard: press `n` anywhere to add an expense; accessible dialogs with focus trap
 
 ## Architecture
@@ -55,6 +56,18 @@ npm run build     # outputs dist/ with service worker
 2. Netlify → **Add new site → Import from Git** → pick the repo. `netlify.toml` already sets build `npm run build`, publish `dist`, Node 22.
 3. Every push to `main` redeploys automatically.
 
-## Data & privacy
+## Data: your Google Sheet
 
-Data lives in this browser's `localStorage` (key `kenledger:v1`) and never leaves the device. Each browser/device has its own ledger — use **Settings → Export Backup** regularly, and **Import Backup** to move to another device.
+Kenledger stores **nothing** from your ledger in the browser. Everything lives in your own Google Sheet, reached through a small Apps Script web app (`google-apps-script/Code.gs`). The browser only remembers the script URL and secret phrase.
+
+Setup (the app walks you through this on first open):
+
+1. Create a Google Sheet, open **Extensions → Apps Script**, paste `google-apps-script/Code.gs`, change `SECRET`.
+2. **Deploy → New deployment → Web app**, Execute as **Me**, access **Anyone**. Copy the Web app URL.
+3. In Kenledger, paste the URL and secret. Do the same on every device.
+
+The script creates four tabs: **Transactions** (dated, with signed amounts, safe to sort, filter and chart), **Accounts**, **Categories** (your custom ones) and **Settings**. Don't rename tabs or headers, or edit the ID columns.
+
+Changes show instantly and are sent to the sheet in small batches; a "Saved to sheet" badge confirms. Offline changes are held and retried, and closing the tab with unsaved changes warns you. Other devices pick up changes when you switch back to the app, every minute while it's open, or via **Settings → Refresh now**.
+
+If you change `Code.gs` later, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
