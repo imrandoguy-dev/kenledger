@@ -18,8 +18,8 @@ export function Accounts() {
     <>
       <PageHeader title="Accounts" eyebrow={`${activeAccounts.length} ${activeAccounts.length === 1 ? 'account' : 'accounts'}`}
         right={<>
-          <Button size="sm" variant="soft" onClick={() => openConverter()}><ArrowRightLeft size={15} /> Convert</Button>
-          <Button size="sm" onClick={() => openAccount()} className="hidden sm:inline-flex"><Plus size={16} /> Add Account</Button>
+          <Button size="sm" variant="soft" onClick={() => openConverter()} className="whitespace-nowrap"><ArrowRightLeft size={15} /> Convert</Button>
+          <Button size="sm" onClick={() => openAccount()} className="whitespace-nowrap"><Plus size={16} /> Account</Button>
         </>} />
 
       {activeAccounts.length > 0 && (
