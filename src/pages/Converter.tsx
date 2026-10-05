@@ -3,6 +3,7 @@ import { ArrowDownUp, Loader2, RefreshCw } from 'lucide-react'
 import { useLedger } from '../store/ledgerStore'
 import { useFx } from '../store/fxStore'
 import { PageHeader } from '../components/Layout'
+import { ViewTabs } from '../components/ViewTabs'
 import { Bubble, SectionHead } from '../components/ui'
 import { CURRENCIES } from '../utils/constants'
 import { currencyMeta, money, parseAmount } from '../utils/currency'
@@ -74,6 +75,8 @@ export function Converter() {
           </button>
         } />
 
+      <ViewTabs active="currency" />
+
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <section className="card min-w-0 p-5 sm:p-6" aria-label="Converter">
           <label className="eyebrow" htmlFor="fx-amount">Amount</label>
@@ -83,7 +86,7 @@ export function Converter() {
               className="tnum min-w-0 flex-1 bg-transparent text-[40px] font-medium tracking-tight outline-none placeholder:text-faint" placeholder="0" />
           </div>
 
-          <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+          <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
             <CurrencySelect id="fx-from" label="From" value={from} onChange={setFrom} />
             <button onClick={() => { setFrom(to); setTo(from) }} aria-label="Swap currencies"
               className="mb-0.5 grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-ink transition-transform hover:rotate-180">
@@ -177,10 +180,11 @@ function CurrencySelect({ id, label, value, onChange }: { id: string; label: str
   return (
     <label htmlFor={id} className="block min-w-0">
       <span className="eyebrow mb-1.5 block">{label}</span>
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className="select w-full min-w-0 truncate !py-2.5 text-[15px] font-semibold">
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className="select w-full min-w-0 !py-2.5 text-[16px] font-semibold">
         {!known && <option value={value}>{value}</option>}
-        {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code} · {c.label}</option>)}
+        {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
       </select>
+      <span className="mt-1 block truncate px-1 text-[11px] text-muted">{currencyMeta(value).label}</span>
     </label>
   )
 }

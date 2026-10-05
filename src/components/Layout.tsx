@@ -67,7 +67,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
 }
 
 function BarItem({ r, short, icon: I, route }: { r: Route; short: string; icon: typeof BookOpen; route: Route }) {
-  const active = isActive(route, r) || (r.name === 'activity' && route.name === 'calendar')
+  const active = isActive(route, r) || (r.name === 'activity' && (route.name === 'calendar' || route.name === 'convert'))
   return (
     <a href={href(r)} aria-label={short} aria-current={active ? 'page' : undefined}
       className={`grid h-11 w-11 place-items-center rounded-full transition-colors ${active ? 'bg-white/12 text-[#F5F2E9]' : 'text-[#F5F2E9]/55 hover:text-[#F5F2E9]'}`}>

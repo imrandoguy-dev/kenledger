@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays, List, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useLedger, useUi } from '../store/ledgerStore'
+import { ViewTabs } from '../components/ViewTabs'
 import { PageHeader, ScopeSelect } from '../components/Layout'
 import { Button, Money } from '../components/ui'
 import { dailySpend, rangeFor, sortTransactions, txTouches } from '../services/calculations'
@@ -38,10 +39,7 @@ export function Calendar() {
     <>
       <PageHeader title="Calendar" eyebrow={fromISODate(month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} right={<ScopeSelect />} />
 
-      <div className="mb-4 flex rounded-full bg-card-2 p-1 lg:hidden" role="tablist" aria-label="View">
-        <a role="tab" aria-selected="false" href="#/activity" className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[12px] font-semibold uppercase tracking-[.08em] text-muted"><List size={14} /> List</a>
-        <a role="tab" aria-selected="true" href="#/calendar" className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary text-[12px] font-semibold uppercase tracking-[.08em] text-primary-ink"><CalendarDays size={14} /> Calendar</a>
-      </div>
+      <ViewTabs active="calendar" />
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <section className="card p-4 sm:p-6">

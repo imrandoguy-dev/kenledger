@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Search, SlidersHorizontal, Printer, Download, X, Receipt, CalendarDays, List } from 'lucide-react'
+import { Search, SlidersHorizontal, Printer, Download, X, Receipt } from 'lucide-react'
 import { useLedger, useUi } from '../store/ledgerStore'
+import { ViewTabs } from '../components/ViewTabs'
 import { PageHeader } from '../components/Layout'
 import { TransactionList } from '../components/TransactionList'
 import { Button, Empty, Money } from '../components/ui'
@@ -60,10 +61,7 @@ export function Transactions() {
           </>
         } />
 
-      <div className="mb-4 flex rounded-full bg-card-2 p-1 lg:hidden" role="tablist" aria-label="View">
-        <a role="tab" aria-selected="true" href="#/activity" className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary text-[12px] font-semibold uppercase tracking-[.08em] text-primary-ink"><List size={14} /> List</a>
-        <a role="tab" aria-selected="false" href="#/calendar" className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[12px] font-semibold uppercase tracking-[.08em] text-muted"><CalendarDays size={14} /> Calendar</a>
-      </div>
+      <ViewTabs active="list" />
 
       <div className="flex gap-2">
         <label className="card flex h-12 flex-1 items-center gap-2.5 px-4">

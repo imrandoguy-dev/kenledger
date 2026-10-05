@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Download, Upload, FileSpreadsheet, Trash2, Sparkles, Plus, X, ShieldCheck, Smartphone, RefreshCw, Unlink, ExternalLink, Link2 } from 'lucide-react'
+import { Download, Upload, FileSpreadsheet, Trash2, Sparkles, Plus, X, ShieldCheck, Smartphone, RefreshCw, Unlink, ExternalLink, Link2, ArrowRightLeft } from 'lucide-react'
 import { SyncBadge } from '../components/SyncBadge'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { PageHeader } from '../components/Layout'
@@ -109,6 +109,10 @@ export function Settings() {
             {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
           </select>
         </Row>
+        <a href="#/convert" className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-card-2/50">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-card-2 text-primary"><ArrowRightLeft size={18} /></span>
+          <span><span className="block text-[15px] font-semibold">Currency converter</span><span className="text-[13px] text-muted">Today’s exchange rates and your accounts in any currency</span></span>
+        </a>
       </Group>
 
       <Group title="Preferences">
