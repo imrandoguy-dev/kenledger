@@ -7,16 +7,20 @@
  *      Who has access: Anyone
  * 3. Copy the Web app URL into Kenledger.
  *
+ * Updating from an older copy: paste this over the old code, Save, then
+ * Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy (the URL stays the same).
+ *
  * Tabs (Accounts, Transactions, Categories, Settings) are created automatically.
  * You can read, sort and chart the Transactions tab freely — just don't rename
  * the tabs or the header row, and don't edit the ID columns.
  */
 
 const SECRET = 'change-me-to-something-private';
+const VERSION = 2; // bump when the sheet layout changes
 
 const TABS = {
   Accounts: ['ID', 'Name', 'Type', 'Starting Balance', 'Currency', 'Icon', 'Color', 'Created At', 'Archived'],
-  Transactions: ['ID', 'Date', 'Type', 'Description', 'Amount', 'Signed Amount', 'Account', 'To Account', 'Category', 'Notes', 'Account ID', 'To Account ID', 'Category ID', 'Created At'],
+  Transactions: ['ID', 'Date', 'Type', 'Description', 'Amount', 'Signed Amount', 'Account', 'To Account', 'Category', 'Notes', 'Account ID', 'To Account ID', 'Category ID', 'Created At', 'Currency', 'To Amount', 'To Currency'],
   Categories: ['ID', 'Name', 'Icon', 'Color', 'Type', 'Parent ID'],
   Settings: ['Key', 'Value'],
 };
@@ -79,8 +83,30 @@ function tab(name) {
     if (name === 'Accounts') sh.getRange(2, 4, sh.getMaxRows() - 1, 1).setNumberFormat('#,##0.00');
     const def = book.getSheetByName('Sheet1');
     if (def && def.getLastRow() === 0 && book.getSheets().length > 1) book.deleteSheet(def);
+  } else {
+    upgradeHeaders(sh, name);
   }
   return sh;
+}
+
+/** Adds any new columns from a newer version of this script to an existing tab. */
+const upgraded = {};
+function upgradeHeaders(sh, name) {
+  if (upgraded[name]) return;
+  upgraded[name] = true;
+  const h = TABS[name];
+  const have = sh.getRange(1, 1, 1, h.length).getDisplayValues()[0];
+  for (let i = 0; i < h.length; i++) {
+    if (have[i] !== h[i]) {
+      sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#174C3B').setFontColor('#F5F2E9');
+      if (name === 'Transactions') {
+        sh.getRange(2, 15, sh.getMaxRows() - 1, 1).setNumberFormat('@');
+        sh.getRange(2, 16, sh.getMaxRows() - 1, 1).setNumberFormat('#,##0.00');
+        sh.getRange(2, 17, sh.getMaxRows() - 1, 1).setNumberFormat('@');
+      }
+      return;
+    }
+  }
 }
 
 function rows(name) {
@@ -134,7 +160,8 @@ function accountRow(a) {
 function txRow(t) {
   const signed = t.type === 'expense' ? -t.amount : t.type === 'income' ? t.amount : 0;
   return [t.id, t.date, t.type, t.description, t.amount, signed, t.accountName || '', t.toAccountName || '', t.type === 'transfer' ? 'Transfer' : (t.categoryName || ''),
-    t.notes || '', t.accountId, t.toAccountId || '', t.categoryId || '', t.createdAt];
+    t.notes || '', t.accountId, t.toAccountId || '', t.categoryId || '', t.createdAt,
+    t.currency || '', t.toAmount || '', t.toCurrency || ''];
 }
 function categoryRow(c) {
   return [c.id, c.name, c.icon, c.color, c.type, c.parentId || ''];
@@ -149,13 +176,14 @@ function readAll() {
     id: String(r[0]), date: asDate(r[1]), type: String(r[2]), description: String(r[3]), amount: Math.abs(num(r[4])),
     notes: r[9] ? String(r[9]) : undefined, accountId: String(r[10]), toAccountId: r[11] ? String(r[11]) : undefined,
     categoryId: r[12] ? String(r[12]) : undefined, createdAt: asIso(r[13]),
+    toAmount: num(r[15]) > 0 ? num(r[15]) : undefined,
   }));
   const categories = rows('Categories').filter((r) => r[0]).map((r) => ({
     id: String(r[0]), name: String(r[1]), icon: String(r[2]), color: String(r[3]), type: String(r[4]), parentId: r[5] ? String(r[5]) : undefined, custom: true,
   }));
   const settings = {};
   rows('Settings').forEach((r) => { if (r[0]) { try { settings[r[0]] = JSON.parse(String(r[1])); } catch (e) { settings[r[0]] = r[1]; } } });
-  return { ok: true, spreadsheetUrl: ss().getUrl(), spreadsheetName: ss().getName(), accounts, transactions, categories, settings };
+  return { ok: true, version: VERSION, spreadsheetUrl: ss().getUrl(), spreadsheetName: ss().getName(), accounts, transactions, categories, settings };
 }
 
 /* ---------------- Operations ---------------- */
@@ -170,6 +198,8 @@ function applyOp(op) {
       data.forEach((r, i) => {
         if (String(r[10]) === op.data.id && r[6] !== op.data.name) sh.getRange(i + 2, 7).setValue(op.data.name);
         if (String(r[11]) === op.data.id && r[7] !== op.data.name) sh.getRange(i + 2, 8).setValue(op.data.name);
+        if (String(r[10]) === op.data.id && r[14] !== op.data.currency) sh.getRange(i + 2, 15).setValue(op.data.currency);
+        if (String(r[11]) === op.data.id && r[16] !== op.data.currency) sh.getRange(i + 2, 17).setValue(op.data.currency);
       });
       break;
     }

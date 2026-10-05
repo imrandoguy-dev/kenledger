@@ -7,6 +7,7 @@ import { SpendingDonut, CategoryBreakdown, TrendChart } from '../components/Char
 import { categoryBreakdown, rangeFor, summarize, trend } from '../services/calculations'
 import { addDays, fromISODate, shiftMonth, shortDate, today } from '../utils/dates'
 import { money } from '../utils/currency'
+import { useBaseTransactions, useFx } from '../store/fxStore'
 
 type P = 'week' | 'month' | 'year'
 
@@ -15,18 +16,22 @@ export function Analytics() {
   const { scope, openPrint } = useUi()
   const [period, setPeriod] = useState<P>('month')
   const [anchor, setAnchor] = useState(today())
-  const cur = data.settings.currency
+  const { curOf, base, mixed } = useFx()
+  const { txs: baseTxs } = useBaseTransactions()
   const ws = data.settings.weekStart
   const range = rangeFor(period, anchor, ws)
   const acc = scope || undefined
 
-  const sum = summarize(data.transactions, range, acc)
-  const slices = categoryBreakdown(data.transactions, range, data.categories, acc)
-  const points = trend(data.transactions, period, range, ws, acc)
+  // One account → its own currency. All accounts → main currency (others converted at today's rate).
+  const cur = acc ? curOf(acc) : base
+  const source = acc ? data.transactions : baseTxs
+  const sum = summarize(source, range, acc)
+  const slices = categoryBreakdown(source, range, data.categories, acc)
+  const points = trend(source, period, range, ws, acc)
 
   // Previous period for comparison
   const prevAnchor = step(period, anchor, -1)
-  const prev = summarize(data.transactions, rangeFor(period, prevAnchor, ws), acc)
+  const prev = summarize(source, rangeFor(period, prevAnchor, ws), acc)
   const delta = prev.spent ? ((sum.spent - prev.spent) / prev.spent) * 100 : null
 
   const label = periodLabel(period, range.from, range.to)
@@ -52,7 +57,7 @@ export function Analytics() {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <section className="card p-6">
-          <p className="eyebrow">Total spent</p>
+          <p className="eyebrow">Total spent{!acc && mixed ? ` · in ${base}` : ''}</p>
           <Money value={sum.spent} currency={cur} className="mt-2 block text-[40px] font-medium leading-none tracking-[-0.03em]" fracClass="text-[.5em] text-muted font-normal" />
           {delta != null && (
             <p className={`mt-2 text-[13px] font-medium ${delta > 0 ? 'text-neg' : 'text-pos'}`}>
@@ -94,6 +99,9 @@ export function Analytics() {
             {delta != null && Math.abs(delta) >= 1 && <Insight>You spent <b>{Math.abs(Math.round(delta))}% {delta > 0 ? 'more' : 'less'}</b> than the previous {period} ({money(prev.spent, cur)}).</Insight>}
           </section>
         </>
+      )}
+      {!acc && mixed && (
+        <p className="mt-6 px-1 text-[12px] text-muted">Spending in other currencies is converted to {base} at today’s exchange rate.</p>
       )}
     </>
   )

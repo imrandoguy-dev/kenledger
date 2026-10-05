@@ -12,13 +12,38 @@ export const ACCOUNT_TYPES: { value: AccountType; label: string; icon: string }[
 export const ACCOUNT_ICONS = ['🏦', '🏛️', '💵', '💳', '👛', '📱', '💰', '🪙', '📒', '🏠', '✈️', '🎯']
 export const ACCOUNT_COLORS = ['#174C3B', '#2F6B55', '#4C7A8C', '#8A6A3F', '#B4654A', '#6B5B8A', '#3F5A3A', '#7B817B']
 
-export const CURRENCIES = [
-  { code: 'INR', symbol: '₹', locale: 'en-IN', label: 'Indian Rupee' },
-  { code: 'USD', symbol: '$', locale: 'en-US', label: 'US Dollar' },
-  { code: 'EUR', symbol: '€', locale: 'de-DE', label: 'Euro' },
-  { code: 'GBP', symbol: '£', locale: 'en-GB', label: 'British Pound' },
-  { code: 'AED', symbol: 'د.إ', locale: 'en-AE', label: 'UAE Dirham' },
+export interface CurrencyMeta { code: string; symbol: string; locale: string; label: string; flag: string }
+
+/** Currencies you can give an account or convert between. Order = how they appear in pickers. */
+export const CURRENCIES: CurrencyMeta[] = [
+  { code: 'INR', symbol: '₹', locale: 'en-IN', label: 'Indian Rupee', flag: '🇮🇳' },
+  { code: 'AED', symbol: 'AED ', locale: 'en-US', label: 'UAE Dirham', flag: '🇦🇪' },
+  { code: 'USD', symbol: '$', locale: 'en-US', label: 'US Dollar', flag: '🇺🇸' },
+  { code: 'EUR', symbol: '€', locale: 'en-US', label: 'Euro', flag: '🇪🇺' },
+  { code: 'GBP', symbol: '£', locale: 'en-GB', label: 'British Pound', flag: '🇬🇧' },
+  { code: 'SAR', symbol: 'SAR ', locale: 'en-US', label: 'Saudi Riyal', flag: '🇸🇦' },
+  { code: 'QAR', symbol: 'QAR ', locale: 'en-US', label: 'Qatari Riyal', flag: '🇶🇦' },
+  { code: 'OMR', symbol: 'OMR ', locale: 'en-US', label: 'Omani Rial', flag: '🇴🇲' },
+  { code: 'KWD', symbol: 'KWD ', locale: 'en-US', label: 'Kuwaiti Dinar', flag: '🇰🇼' },
+  { code: 'BHD', symbol: 'BHD ', locale: 'en-US', label: 'Bahraini Dinar', flag: '🇧🇭' },
+  { code: 'SGD', symbol: 'S$', locale: 'en-US', label: 'Singapore Dollar', flag: '🇸🇬' },
+  { code: 'MYR', symbol: 'RM ', locale: 'en-US', label: 'Malaysian Ringgit', flag: '🇲🇾' },
+  { code: 'CAD', symbol: 'C$', locale: 'en-US', label: 'Canadian Dollar', flag: '🇨🇦' },
+  { code: 'AUD', symbol: 'A$', locale: 'en-US', label: 'Australian Dollar', flag: '🇦🇺' },
+  { code: 'NZD', symbol: 'NZ$', locale: 'en-US', label: 'New Zealand Dollar', flag: '🇳🇿' },
+  { code: 'CHF', symbol: 'CHF ', locale: 'en-US', label: 'Swiss Franc', flag: '🇨🇭' },
+  { code: 'JPY', symbol: '¥', locale: 'en-US', label: 'Japanese Yen', flag: '🇯🇵' },
+  { code: 'CNY', symbol: 'CN¥', locale: 'en-US', label: 'Chinese Yuan', flag: '🇨🇳' },
+  { code: 'PKR', symbol: 'Rs ', locale: 'en-US', label: 'Pakistani Rupee', flag: '🇵🇰' },
+  { code: 'LKR', symbol: 'Rs ', locale: 'en-US', label: 'Sri Lankan Rupee', flag: '🇱🇰' },
+  { code: 'BDT', symbol: '৳', locale: 'en-US', label: 'Bangladeshi Taka', flag: '🇧🇩' },
+  { code: 'NPR', symbol: 'Rs ', locale: 'en-US', label: 'Nepalese Rupee', flag: '🇳🇵' },
+  { code: 'PHP', symbol: '₱', locale: 'en-US', label: 'Philippine Peso', flag: '🇵🇭' },
+  { code: 'THB', symbol: '฿', locale: 'en-US', label: 'Thai Baht', flag: '🇹🇭' },
+  { code: 'TRY', symbol: '₺', locale: 'en-US', label: 'Turkish Lira', flag: '🇹🇷' },
+  { code: 'ZAR', symbol: 'R ', locale: 'en-US', label: 'South African Rand', flag: '🇿🇦' },
 ]
+
 
 // Muted, desaturated palette that sits well on ivory.
 const C = {

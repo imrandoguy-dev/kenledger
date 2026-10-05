@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { useLedger } from '../store/ledgerStore'
 import { Logo } from '../components/Layout'
 import { Button } from '../components/ui'
-import { ACCOUNT_TYPES } from '../utils/constants'
+import { ACCOUNT_TYPES, CURRENCIES } from '../utils/constants'
 import { currencyMeta, parseAmount, money } from '../utils/currency'
 import type { AccountType } from '../types/ledger'
 
@@ -56,7 +56,7 @@ export function Onboarding() {
               <label className="mt-5 flex items-center justify-between text-[14px]">
                 <span className="text-muted">Currency</span>
                 <select className="select" value={cur} onChange={(e) => updateSettings({ currency: e.target.value })}>
-                  {['INR', 'USD', 'EUR', 'GBP', 'AED'].map((c) => <option key={c} value={c}>{c} {currencyMeta(c).symbol}</option>)}
+                  {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
                 </select>
               </label>
             </div>

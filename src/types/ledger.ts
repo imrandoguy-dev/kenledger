@@ -23,7 +23,8 @@ export interface Transaction {
   accountId: string
   toAccountId?: string
   type: TxType
-  amount: number // always positive
+  amount: number // always positive, in the (from) account's currency
+  toAmount?: number // transfers between currencies: amount received, in the destination account's currency
   categoryId?: string
   description: string
   date: string // YYYY-MM-DD in local time
@@ -43,6 +44,7 @@ export interface Category {
 
 export interface Settings {
   name: string
+  /** Main currency: totals, analytics and reports are shown in this. */
   currency: string
   theme: Theme
   weekStart: 0 | 1 // 0 = Sunday, 1 = Monday

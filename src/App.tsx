@@ -10,6 +10,8 @@ import { Analytics } from './pages/Analytics'
 import { Calendar } from './pages/Calendar'
 import { Settings } from './pages/Settings'
 import { Onboarding } from './pages/Onboarding'
+import { Converter } from './pages/Converter'
+import { FxProvider } from './store/fxStore'
 import { Connect, Loading, LoadError } from './pages/Connect'
 import { TransactionForm } from './components/TransactionForm'
 import { TransactionDetail } from './components/TransactionDetail'
@@ -71,6 +73,7 @@ function Shell() {
     case 'analytics': page = <Analytics />; break
     case 'calendar': page = <Calendar />; break
     case 'settings': page = <Settings />; break
+    case 'convert': page = <Converter />; break
     default: page = <Dashboard />
   }
 
@@ -92,9 +95,11 @@ function Shell() {
 export default function App() {
   return (
     <LedgerProvider>
+      <FxProvider>
       <UiProvider>
         <Shell />
       </UiProvider>
+      </FxProvider>
     </LedgerProvider>
   )
 }

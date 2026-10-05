@@ -7,6 +7,7 @@ import { Button, Empty, Money } from '../components/ui'
 import { filterTransactions, rangeFor, sortTransactions, type Range, type SortKey, type TxFilter } from '../services/calculations'
 import { today, startOfMonth, shortDate } from '../utils/dates'
 import { TransactionItem } from '../components/TransactionItem'
+import { useFx } from '../store/fxStore'
 import { exportCSV } from '../services/export'
 import { parseAmount } from '../utils/currency'
 import type { TxType } from '../types/ledger'
@@ -16,7 +17,9 @@ type When = 'all' | 'week' | 'month' | 'year' | 'custom'
 export function Transactions() {
   const { data, activeAccounts } = useLedger()
   const { scope, setScope, openPrint, openTx } = useUi()
-  const cur = data.settings.currency
+  const { curOf, toBase, base } = useFx()
+  // Totals: in the filtered account's currency, or the main currency (converted at today's rate).
+  const cur = scope ? curOf(scope) : base
   const [q, setQ] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [type, setType] = useState<TxType | ''>('')
@@ -37,8 +40,9 @@ export function Transactions() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, q, scope, type, cat, when, custom.from, custom.to, min, max, sort],
   )
-  const spent = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  const income = txs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const inCur = (t: { amount: number; accountId: string }) => { const c = curOf(t.accountId); return c === cur ? t.amount : toBase(t.amount, c) ?? 0 }
+  const spent = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + inCur(t), 0)
+  const income = txs.filter((t) => t.type === 'income').reduce((s, t) => s + inCur(t), 0)
   const active = [scope, type, cat, when !== 'all', min, max].filter(Boolean).length
   const roots = data.categories.filter((c) => !c.parentId)
   const grouped = sort === 'newest' || sort === 'oldest'

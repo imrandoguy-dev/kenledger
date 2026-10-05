@@ -31,7 +31,8 @@ export function transactionsToCSV(data: LedgerData, txs: Transaction[] = data.tr
     const p = c.parentId ? data.categories.find((x) => x.id === c.parentId) : undefined
     return p ? `${p.name} / ${c.name}` : c.name
   }
-  const header = ['Date', 'Account', 'Type', 'Category', 'Description', 'Amount', 'To Account', 'Notes']
+  const curOf = (id?: string) => data.accounts.find((a) => a.id === id)?.currency || data.settings.currency
+  const header = ['Date', 'Account', 'Type', 'Category', 'Description', 'Amount', 'Currency', 'To Account', 'To Amount', 'To Currency', 'Notes']
   const rows = [...txs]
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((t) => [
@@ -41,7 +42,10 @@ export function transactionsToCSV(data: LedgerData, txs: Transaction[] = data.tr
       t.type === 'transfer' ? 'Transfer' : cat(t.categoryId),
       t.description,
       t.amount.toFixed(2),
+      curOf(t.accountId),
       t.type === 'transfer' ? acc(t.toAccountId) : '',
+      t.type === 'transfer' ? (t.toAmount ?? t.amount).toFixed(2) : '',
+      t.type === 'transfer' ? curOf(t.toAccountId) : '',
       t.notes ?? '',
     ].map(csvCell).join(','))
   // BOM so Excel reads ₹ correctly; Google Sheets ignores it.

@@ -10,6 +10,29 @@ import { demoLedger } from '../services/demo'
 import { CURRENCIES } from '../utils/constants'
 import type { LedgerData, Theme } from '../types/ledger'
 import { useInstallPrompt } from '../pwa'
+import scriptSource from '../../google-apps-script/Code.gs?raw'
+
+const SCRIPT_VERSION = Number(/const VERSION = (\d+)/.exec(scriptSource)?.[1] ?? 1)
+
+/** Shown when the sheet runs an older copy of the Apps Script. */
+function ScriptUpdate() {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="bg-neg-soft/60 px-4 py-4 text-[13px] leading-relaxed">
+      <p className="text-[15px] font-semibold text-ink">Update your sheet script</p>
+      <p className="mt-1 text-muted">A newer script adds currency columns and saves transfers between currencies. Your data stays as it is.</p>
+      <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted [&_b]:text-ink">
+        <li>Copy the new script, open your sheet → <b>Extensions → Apps Script</b>, replace everything and paste.</li>
+        <li>Put your own secret back on the <b>SECRET</b> line, then Save.</li>
+        <li><b>Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy</b>. The URL stays the same.</li>
+        <li>Come back here and tap <b>Refresh now</b>.</li>
+      </ol>
+      <Button size="sm" className="mt-3" onClick={async () => {
+        try { await navigator.clipboard.writeText(scriptSource); setCopied(true); setTimeout(() => setCopied(false), 2500) } catch { /* noop */ }
+      }}>{copied ? 'Copied' : 'Copy new script'}</Button>
+    </div>
+  )
+}
 
 const CAT_ICONS = ['🐾', '👶', '💄', '🏡', '📚', '🧘', '🍺', '🚗', '🎨', '🛠️', '💼', '🎓', '🧾', '📌']
 
@@ -54,6 +77,7 @@ export function Settings() {
               <SyncBadge />
             </div>
             {sync.syncError && <p className="px-4 py-3 text-[13px] text-neg">{sync.syncError}</p>}
+            {(sync.meta.scriptVersion ?? 1) < SCRIPT_VERSION && <ScriptUpdate />}
             {sync.meta.spreadsheetUrl && (
               <a href={sync.meta.spreadsheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-card-2/50">
                 <span className="grid h-10 w-10 place-items-center rounded-full bg-card-2 text-primary"><ExternalLink size={18} /></span>
@@ -80,9 +104,9 @@ export function Settings() {
           <Segmented<Theme> label="Theme" value={s.theme} onChange={(t) => updateSettings({ theme: t })}
             options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} />
         </div>
-        <Row label="Currency" hint="One base currency per ledger">
-          <select className="select" value={s.currency} onChange={(e) => updateSettings({ currency: e.target.value })}>
-            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} {c.symbol}</option>)}
+        <Row label="Main currency" hint="Totals, analytics and reports use this">
+          <select className="select max-w-[150px]" value={s.currency} onChange={(e) => updateSettings({ currency: e.target.value })}>
+            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
           </select>
         </Row>
       </Group>

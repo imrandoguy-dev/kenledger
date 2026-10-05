@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { CalendarDays, ChevronRight, Tag, Wallet, StickyNote, ArrowDownUp, Plus } from 'lucide-react'
 import type { TxType } from '../types/ledger'
 import { useLedger, useUi } from '../store/ledgerStore'
+import { useFx } from '../store/fxStore'
+import { formatRate } from '../services/fx'
 import { Button, Segmented, Sheet, Bubble } from './ui'
 import { currencyMeta, money, parseAmount } from '../utils/currency'
-import { formatDate, relativeDay, today, yesterday } from '../utils/dates'
+import { formatDate, relativeDay, shortDate, today, yesterday } from '../utils/dates'
 
 type Panel = 'date' | 'category' | 'account' | 'to' | null
 
@@ -12,7 +14,7 @@ export function TransactionForm() {
   const { txSheet, closeTx, notify, scope } = useUi()
   const { data, activeAccounts, addTransaction, updateTransaction, account, category, balances, addCategory } = useLedger()
   const editing = txSheet?.tx
-  const cur = data.settings.currency
+  const { curOf, convert, base, rates } = useFx()
 
   const [type, setType] = useState<TxType>('expense')
   const [description, setDescription] = useState('')
@@ -26,6 +28,8 @@ export function TransactionForm() {
   const [error, setError] = useState('')
   const [catGroup, setCatGroup] = useState<string | null>(null)
   const [newCat, setNewCat] = useState('')
+  const [toAmount, setToAmount] = useState('')
+  const [toTouched, setToTouched] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Reset whenever the sheet opens.
@@ -44,6 +48,8 @@ export function TransactionForm() {
     setPanel(null)
     setError('')
     setCatGroup(null)
+    setToAmount(t?.toAmount != null ? String(t.toAmount) : '')
+    setToTouched(t?.toAmount != null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSheet])
 
@@ -57,6 +63,21 @@ export function TransactionForm() {
     if (categoryId && !catsForType.some((c) => c.id === categoryId)) setCategoryId(undefined)
   }, [type, catsForType, categoryId])
 
+  const cur = curOf(accountId)
+  const toCur = curOf(toAccountId)
+  const crossCurrency = type === 'transfer' && !!toAccountId && cur !== toCur
+  const rate = convert(1, cur, toCur)
+  const typed = parseAmount(amount)
+
+  // Pre-fill what the other account receives at today's rate, until the user types their own figure.
+  useEffect(() => {
+    if (!crossCurrency || toTouched) return
+    const v = Number.isFinite(typed) ? convert(typed, cur, toCur) : null
+    setToAmount(v == null ? '' : String(Math.round(v * 100) / 100))
+  }, [crossCurrency, toTouched, typed, cur, toCur, convert])
+
+  const approxBase = type !== 'transfer' && cur !== base && Number.isFinite(typed) ? convert(typed, cur, base) : null
+
   const title = editing ? `Edit ${type}` : type === 'expense' ? 'Add Expense' : type === 'income' ? 'Add Income' : 'Transfer'
 
   function save() {
@@ -67,6 +88,8 @@ export function TransactionForm() {
       if (!toAccountId) { setError('Choose where the money goes.'); setPanel('to'); return }
       if (toAccountId === accountId) { setError('From and To must be different accounts.'); setPanel('to'); return }
     }
+    const recv = crossCurrency ? parseAmount(toAmount) : undefined
+    if (crossCurrency && (!recv || recv <= 0)) { setError(`Enter how much ${account(toAccountId)?.name ?? 'the other account'} receives in ${toCur}.`); return }
     const desc = description.trim() || (type === 'transfer' ? `Transfer to ${account(toAccountId)?.name ?? ''}` : cat?.name ?? (type === 'income' ? 'Income' : 'Expense'))
     const payload = {
       type, amount: n, accountId, date,
@@ -74,6 +97,7 @@ export function TransactionForm() {
       notes: notes.trim() || undefined,
       categoryId: type === 'transfer' ? undefined : categoryId,
       toAccountId: type === 'transfer' ? toAccountId : undefined,
+      toAmount: crossCurrency ? recv : undefined,
     }
     if (editing) {
       updateTransaction(editing.id, payload)
@@ -141,7 +165,30 @@ export function TransactionForm() {
               onChange={(e) => { setAmount(e.target.value.replace(/[^0-9.,]/g, '')); setError('') }}
               aria-invalid={!!error && !parseAmount(amount)}
             />
+            <span className="text-[13px] font-semibold text-muted">{cur}</span>
           </div>
+          {approxBase != null && typed > 0 && (
+            <p className="tnum mt-2 text-[13px] text-muted">≈ {money(approxBase, base)} at today’s rate</p>
+          )}
+          {crossCurrency && (
+            <div className="mt-5 anim-rise">
+              <label className="eyebrow" htmlFor="tx-to-amt">{account(toAccountId)?.name ?? 'They'} receive</label>
+              <div className="flex items-baseline gap-2 border-b border-line py-1 focus-within:border-primary">
+                <span className="text-xl text-muted">{currencyMeta(toCur).symbol}</span>
+                <input id="tx-to-amt" inputMode="decimal" placeholder="0" value={toAmount}
+                  onChange={(e) => { setToAmount(e.target.value.replace(/[^0-9.,]/g, '')); setToTouched(true); setError('') }}
+                  className="tnum w-full bg-transparent text-[28px] font-medium outline-none placeholder:text-faint" />
+                <span className="text-[13px] font-semibold text-muted">{toCur}</span>
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-muted">
+                {rate != null ? <>Today: 1 {cur} = {formatRate(rate)} {toCur}{rates ? ` (${shortDate(rates.date)})` : ''}. </> : <>No rate available offline. </>}
+                Change it if your bank used a different rate.
+                {toTouched && rate != null && (
+                  <button type="button" onClick={() => setToTouched(false)} className="ml-1 font-semibold text-primary underline underline-offset-2">Use today’s rate</button>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="card mt-3 divide-y divide-line overflow-hidden">
@@ -154,12 +201,12 @@ export function TransactionForm() {
           </Row>
 
           <Row icon={<Wallet size={18} />} label={type === 'transfer' ? 'From' : 'Account'} value={accName(accountId)} open={panel === 'account'} onClick={() => toggle('account')}>
-            <AccountChoices value={accountId} onPick={(id) => { setAccountId(id); setPanel(null) }} exclude={undefined} balances={balances} cur={cur} />
+            <AccountChoices value={accountId} onPick={(id) => { setAccountId(id); setPanel(null) }} exclude={undefined} balances={balances} />
           </Row>
 
           {type === 'transfer' ? (
             <Row icon={<ArrowDownUp size={18} />} label="To" value={accName(toAccountId)} open={panel === 'to'} onClick={() => toggle('to')}>
-              <AccountChoices value={toAccountId} onPick={(id) => { setToAccountId(id); setPanel(null) }} exclude={accountId} balances={balances} cur={cur} />
+              <AccountChoices value={toAccountId} onPick={(id) => { setToAccountId(id); setPanel(null) }} exclude={accountId} balances={balances} />
             </Row>
           ) : (
             <Row icon={<Tag size={18} />} label="Category" value={catLabel} open={panel === 'category'} onClick={() => toggle('category')}>
@@ -245,7 +292,8 @@ function AddCat({ value, onChange, onAdd }: { value: string; onChange: (s: strin
   )
 }
 
-function AccountChoices({ value, onPick, exclude, balances, cur }: { value: string; onPick: (id: string) => void; exclude?: string; balances: Record<string, number>; cur: string }) {
+function AccountChoices({ value, onPick, exclude, balances }: { value: string; onPick: (id: string) => void; exclude?: string; balances: Record<string, number> }) {
+  const { curOf } = useFx()
   const { activeAccounts } = useLedger()
   const list = activeAccounts.filter((a) => a.id !== exclude)
   if (!list.length) return <p className="text-sm text-muted">Create another account to transfer money between them.</p>
@@ -256,7 +304,7 @@ function AccountChoices({ value, onPick, exclude, balances, cur }: { value: stri
           className={`flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition-colors ${value === a.id ? 'bg-primary text-primary-ink' : 'bg-card-2 hover:brightness-95'}`}>
           <Bubble size={34} color={a.color}>{a.icon}</Bubble>
           <span className="flex-1 text-sm font-semibold">{a.name}</span>
-          <span className="tnum text-[13px] opacity-75">{money(balances[a.id] ?? 0, cur)}</span>
+          <span className="tnum text-[13px] opacity-75">{money(balances[a.id] ?? 0, curOf(a.id))}</span>
         </button>
       ))}
     </div>

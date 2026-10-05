@@ -1,7 +1,11 @@
-import { CURRENCIES } from './constants'
+import { CURRENCIES, type CurrencyMeta } from './constants'
 
-export function currencyMeta(code: string) {
-  return CURRENCIES.find((c) => c.code === code) ?? CURRENCIES[0]
+export function currencyMeta(code: string): CurrencyMeta {
+  const known = CURRENCIES.find((c) => c.code === code)
+  if (known) return known
+  // Any other ISO code still formats sensibly: "XYZ 1,234.00".
+  const c = (code || 'INR').toUpperCase()
+  return { code: c, symbol: `${c} `, locale: 'en-US', label: c, flag: '🏳️' }
 }
 
 /** ₹42,580.00 — split into whole + fraction so the UI can de-emphasise the paise. */

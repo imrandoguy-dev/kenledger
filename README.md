@@ -14,6 +14,9 @@ A calm, private notebook for your money. Record expenses across multiple account
 - Analytics: Week / Month / Year, previous/next period, donut, category breakdown, trend chart, metrics, factual insights, % change vs previous period
 - Calendar heat-map with per-day totals and entries
 - Print report dialog (range, account, category, sections) → browser print / Save as PDF
+- Accounts in any currency (INR, AED, USD, EUR, GBP, SAR, …); totals and analytics in your main currency at today's rate
+- Currency converter with daily mid-market rates (and past dates), plus each account's balance in other currencies
+- Transfers between currencies record what was sent and what was received
 - Google Sheet as the only storage, synced across all your devices
 - CSV export, JSON backup + restore, clear all
 - Light / Dark / System theme (dark is designed, not inverted)
@@ -69,5 +72,9 @@ Setup (the app walks you through this on first open):
 The script creates four tabs: **Transactions** (dated, with signed amounts, safe to sort, filter and chart), **Accounts**, **Categories** (your custom ones) and **Settings**. Don't rename tabs or headers, or edit the ID columns.
 
 Changes show instantly and are sent to the sheet in small batches; a "Saved to sheet" badge confirms. Offline changes are held and retried, and closing the tab with unsaved changes warns you. Other devices pick up changes when you switch back to the app, every minute while it's open, or via **Settings → Refresh now**.
+
+## Exchange rates
+
+Daily mid-market rates come from the free [fawazahmed0/currency-api](https://github.com/fawazahmed0/exchange-api) (with [open.er-api.com](https://www.exchangerate-api.com/docs/free) as a fallback). No API key needed. Only these public rates are cached in the browser, never your ledger.
 
 If you change `Code.gs` later, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.

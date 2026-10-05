@@ -9,6 +9,8 @@ import { today } from '../utils/dates'
 import { ACCOUNT_TYPES } from '../utils/constants'
 import { navigate } from '../router'
 import { exportCSV } from '../services/export'
+import { WorthToday } from '../components/Conversions'
+import { currencyMeta } from '../utils/currency'
 
 export function AccountDetails({ id }: { id: string }) {
   const { account, balances, data, deleteAccount } = useLedger()
@@ -20,7 +22,7 @@ export function AccountDetails({ id }: { id: string }) {
   if (!acc) {
     return <Empty icon={<Receipt />} title="Account not found" body="It may have been deleted." action={<Button onClick={() => navigate({ name: 'accounts' })}>Back to accounts</Button>} />
   }
-  const cur = data.settings.currency
+  const cur = acc.currency || data.settings.currency
   const txs = sortTransactions(data.transactions.filter((t) => txTouches(t, id)), 'newest')
   const month = rangeFor('month', today(), data.settings.weekStart)
   const monthChange = txs.filter((t) => t.date >= month.from && t.date <= month.to).reduce((s, t) => s + effectOn(t, id), 0)
@@ -28,7 +30,7 @@ export function AccountDetails({ id }: { id: string }) {
 
   return (
     <>
-      <PageHeader back="#/accounts" title={acc.name} eyebrow={type}
+      <PageHeader back="#/accounts" title={acc.name} eyebrow={`${type} · ${currencyMeta(cur).flag} ${cur}`}
         right={
           <>
             <button onClick={() => openAccount(acc)} aria-label="Edit account" className="grid h-10 w-10 place-items-center rounded-full bg-card-2 hover:brightness-95"><Pencil size={16} /></button>
@@ -36,6 +38,7 @@ export function AccountDetails({ id }: { id: string }) {
           </>
         } />
 
+      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <section className="card flex flex-col items-center px-6 py-8 text-center">
         <Bubble size={64} color={acc.color}>{acc.icon}</Bubble>
         <p className="eyebrow mt-5">Current balance</p>
@@ -49,6 +52,8 @@ export function AccountDetails({ id }: { id: string }) {
           <Button variant="soft" className="flex-1" onClick={() => openTx({ type: 'income', accountId: id })}>Income</Button>
         </div>
       </section>
+      <WorthToday key={`${id}-${cur}`} amount={bal} currency={cur} title="This balance today" />
+      </div>
 
       <SectionHead title={`Transactions · ${txs.length}`} action={txs.length ? (
         <button onClick={() => exportCSV(data, txs)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.12em] text-primary"><Download size={13} /> CSV</button>

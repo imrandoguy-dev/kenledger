@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BookOpen, Wallet, Plus, History, PieChart, CalendarDays, Settings as Cog } from 'lucide-react'
+import { BookOpen, Wallet, Plus, History, PieChart, CalendarDays, Settings as Cog, ArrowRightLeft } from 'lucide-react'
 import { href, type Route } from '../router'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { SyncBadge } from './SyncBadge'
@@ -10,6 +10,7 @@ const items = [
   { r: { name: 'activity' } as Route, label: 'Transactions', short: 'Activity', icon: History },
   { r: { name: 'analytics' } as Route, label: 'Analytics', short: 'Analytics', icon: PieChart },
   { r: { name: 'calendar' } as Route, label: 'Calendar', short: 'Calendar', icon: CalendarDays },
+  { r: { name: 'convert' } as Route, label: 'Currency', short: 'Currency', icon: ArrowRightLeft },
 ]
 
 const isActive = (route: Route, target: Route) =>

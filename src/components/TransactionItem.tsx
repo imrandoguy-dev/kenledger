@@ -1,13 +1,17 @@
 import { ArrowLeftRight } from 'lucide-react'
 import type { Transaction } from '../types/ledger'
 import { useLedger, useUi } from '../store/ledgerStore'
+import { useFx } from '../store/fxStore'
 import { Bubble, Money } from './ui'
 import { effectOn } from '../services/calculations'
 
 export function TransactionItem({ tx, scopeAccountId, showDate }: { tx: Transaction; scopeAccountId?: string; showDate?: string }) {
-  const { account, category, data } = useLedger()
+  const { account, category } = useLedger()
   const { openViewTx } = useUi()
-  const cur = data.settings.currency
+  const { curOf } = useFx()
+  // Amounts are shown in the account's own currency (the receiving side for incoming transfers).
+  const incoming = tx.type === 'transfer' && scopeAccountId && tx.toAccountId === scopeAccountId && tx.accountId !== scopeAccountId
+  const cur = curOf(incoming ? tx.toAccountId : tx.accountId)
   const cat = category(tx.categoryId)
   const acc = account(tx.accountId)
   const to = account(tx.toAccountId)

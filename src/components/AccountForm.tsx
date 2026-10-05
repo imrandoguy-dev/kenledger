@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { AccountType } from '../types/ledger'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { Button, Sheet } from './ui'
-import { ACCOUNT_COLORS, ACCOUNT_ICONS, ACCOUNT_TYPES } from '../utils/constants'
+import { ACCOUNT_COLORS, ACCOUNT_ICONS, ACCOUNT_TYPES, CURRENCIES } from '../utils/constants'
 import { currencyMeta, parseAmount } from '../utils/currency'
 import { navigate } from '../router'
 
@@ -16,6 +16,7 @@ export function AccountForm() {
   const [icon, setIcon] = useState('🏦')
   const [color, setColor] = useState(ACCOUNT_COLORS[0])
   const [error, setError] = useState('')
+  const [cur, setCur] = useState(data.settings.currency)
 
   useEffect(() => {
     if (!accountSheet) return
@@ -26,10 +27,11 @@ export function AccountForm() {
     setIcon(a?.icon ?? '🏦')
     setColor(a?.color ?? ACCOUNT_COLORS[data.accounts.length % ACCOUNT_COLORS.length])
     setError('')
-  }, [accountSheet, data.accounts.length])
+    setCur(a?.currency || data.settings.currency)
+  }, [accountSheet, data.accounts.length, data.settings.currency])
 
   if (!accountSheet) return null
-  const cur = data.settings.currency
+  const hasTx = !!editing && data.transactions.some((t) => t.accountId === editing.id || t.toAccountId === editing.id)
 
   function save() {
     if (!name.trim()) { setError('Give the account a name.'); return }
@@ -37,7 +39,7 @@ export function AccountForm() {
     if (Number.isNaN(sb)) { setError('Starting balance must be a number.'); return }
     const signed = type === 'credit' ? -Math.abs(sb) : sb // credit: stored as amount owed (negative)
     if (editing) {
-      updateAccount(editing.id, { name: name.trim(), type, startingBalance: signed, icon, color })
+      updateAccount(editing.id, { name: name.trim(), type, startingBalance: signed, currency: cur, icon, color })
       notify('Account updated')
       closeAccount()
     } else {
@@ -56,6 +58,15 @@ export function AccountForm() {
           <div>
             <label className="eyebrow" htmlFor="acc-name">Account name</label>
             <input id="acc-name" data-autofocus className="field text-[17px]" placeholder="HDFC Savings" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+          </div>
+          <div>
+            <label className="eyebrow" htmlFor="acc-cur">Currency</label>
+            <select id="acc-cur" className="select mt-1.5 w-full" value={cur} onChange={(e) => setCur(e.target.value)}>
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code} · {c.label}</option>)}
+            </select>
+            {hasTx && editing?.currency !== cur && (
+              <p className="mt-2 text-[12px] text-neg">Existing amounts in this account won’t be converted, only relabelled as {cur}.</p>
+            )}
           </div>
           <div>
             <label className="eyebrow" htmlFor="acc-start">{type === 'credit' ? 'Amount currently owed' : 'Starting balance'}</label>

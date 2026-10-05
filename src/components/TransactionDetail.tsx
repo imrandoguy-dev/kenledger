@@ -4,17 +4,23 @@ import { useLedger, useUi } from '../store/ledgerStore'
 import { Bubble, Button, Confirm, Money, Sheet } from './ui'
 import { longDate } from '../utils/dates'
 import { money } from '../utils/currency'
+import { useFx } from '../store/fxStore'
+import { formatRate } from '../services/fx'
+import { received } from '../services/calculations'
 
 export function TransactionDetail() {
   const { viewTx, closeViewTx, openTx, notify } = useUi()
   const { account, category, deleteTransaction, restoreTransaction, data } = useLedger()
   const [confirm, setConfirm] = useState(false)
+  const { curOf, convert, base } = useFx()
   if (!viewTx) return null
   // Use the live copy in case it was edited.
   const tx = data.transactions.find((t) => t.id === viewTx.id) ?? viewTx
   const cat = category(tx.categoryId)
   const parent = cat?.parentId ? category(cat.parentId) : undefined
-  const cur = data.settings.currency
+  const cur = curOf(tx.accountId)
+  const toCur = curOf(tx.toAccountId)
+  const inBase = tx.type !== 'transfer' && cur !== base ? convert(tx.amount, cur, base) : null
 
   const rows: [string, string][] = [
     ['Date', longDate(tx.date)],
@@ -25,6 +31,12 @@ export function TransactionDetail() {
       ? ['To', account(tx.toAccountId)?.name ?? '—']
       : ['Category', cat ? (parent ? `${parent.name} · ${cat.name}` : cat.name) : 'Uncategorized'],
   ]
+  if (tx.type === 'transfer' && tx.toAccountId && toCur !== cur) {
+    const recv = received(tx)
+    rows.push(['Received', money(recv, toCur)])
+    rows.push(['Rate used', `1 ${cur} = ${formatRate(recv / tx.amount)} ${toCur}`])
+  }
+  if (inBase != null) rows.push([`In ${base} today`, `≈ ${money(inBase, base)}`])
   if (tx.notes) rows.push(['Notes', tx.notes])
 
   return (

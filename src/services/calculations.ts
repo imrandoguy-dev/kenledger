@@ -12,7 +12,7 @@ export function effectOn(tx: Transaction, accountId: string): number {
   // transfer
   let e = 0
   if (tx.accountId === accountId) e -= tx.amount
-  if (tx.toAccountId === accountId) e += tx.amount
+  if (tx.toAccountId === accountId) e += received(tx)
   return e
 }
 
@@ -30,7 +30,7 @@ export function balances(accounts: Account[], txs: Transaction[]): Record<string
     else if (t.type === 'income' && t.accountId in out) out[t.accountId] += t.amount
     else if (t.type === 'transfer') {
       if (t.accountId in out) out[t.accountId] -= t.amount
-      if (t.toAccountId && t.toAccountId in out) out[t.toAccountId] += t.amount
+      if (t.toAccountId && t.toAccountId in out) out[t.toAccountId] += received(t)
     }
   }
   for (const k in out) out[k] = round(out[k])
@@ -38,6 +38,9 @@ export function balances(accounts: Account[], txs: Transaction[]): Record<string
 }
 
 export const round = (n: number) => Math.round(n * 100) / 100
+
+/** What the destination account receives in a transfer (differs when currencies differ). */
+export const received = (t: Transaction) => (t.toAmount != null && t.toAmount > 0 ? t.toAmount : t.amount)
 
 export function txTouches(tx: Transaction, accountId: string) {
   return tx.accountId === accountId || tx.toAccountId === accountId

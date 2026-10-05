@@ -26,7 +26,7 @@ export function saveConnection(c: Connection | null) {
 
 /* ---------------- Operations sent to the sheet ---------------- */
 
-export type TxWire = Transaction & { accountName?: string; toAccountName?: string; categoryName?: string }
+export type TxWire = Transaction & { accountName?: string; toAccountName?: string; categoryName?: string; currency?: string; toCurrency?: string }
 export type Op =
   | { op: 'upsertAccount'; data: Account }
   | { op: 'deleteAccount'; id: string }
@@ -37,7 +37,7 @@ export type Op =
   | { op: 'settings'; data: Partial<Settings> }
   | { op: 'replaceAll'; data: { accounts: Account[]; transactions: TxWire[]; categories: Category[]; settings: Settings } }
 
-export interface RemoteMeta { spreadsheetUrl?: string; spreadsheetName?: string }
+export interface RemoteMeta { spreadsheetUrl?: string; spreadsheetName?: string; scriptVersion?: number }
 
 export class SheetError extends Error {}
 
@@ -65,19 +65,20 @@ export async function fetchLedger(c: Connection): Promise<{ data: LedgerData; me
   catch { throw new SheetError('Couldn’t reach Google. Check your internet connection.') }
   const j = await parse(res) as unknown as {
     accounts: Account[]; transactions: Transaction[]; categories: Category[]; settings: Partial<Settings>
-  } & RemoteMeta
+  } & RemoteMeta & { version?: number }
   const base = emptyLedger()
   const custom = (j.categories ?? []).map((cat) => ({ ...cat, custom: true }))
   const empty = !j.accounts?.length && !j.transactions?.length && !Object.keys(j.settings ?? {}).length
   return {
     empty,
-    meta: { spreadsheetUrl: j.spreadsheetUrl, spreadsheetName: j.spreadsheetName },
+    meta: { spreadsheetUrl: j.spreadsheetUrl, spreadsheetName: j.spreadsheetName, scriptVersion: Number(j.version) || 1 },
     data: {
       version: 1,
       accounts: (j.accounts ?? []).map((a) => ({ ...a, startingBalance: Number(a.startingBalance) || 0, archived: a.archived || undefined })),
       transactions: (j.transactions ?? []).map((t) => ({
         ...t, amount: Math.abs(Number(t.amount)) || 0,
         notes: t.notes || undefined, toAccountId: t.toAccountId || undefined, categoryId: t.categoryId || undefined,
+        toAmount: Number(t.toAmount) > 0 ? Number(t.toAmount) : undefined,
       })),
       categories: [...defaultCategories(), ...custom],
       settings: { ...base.settings, ...(j.settings ?? {}) },
@@ -99,7 +100,12 @@ export function toWire(t: Transaction, d: LedgerData): TxWire {
   const acc = (id?: string) => d.accounts.find((a) => a.id === id)?.name
   const cat = d.categories.find((c) => c.id === t.categoryId)
   const parent = cat?.parentId ? d.categories.find((c) => c.id === cat.parentId) : undefined
-  return { ...t, accountName: acc(t.accountId), toAccountName: acc(t.toAccountId), categoryName: cat ? (parent ? `${parent.name} / ${cat.name}` : cat.name) : '' }
+  const curOf = (id?: string) => d.accounts.find((a) => a.id === id)?.currency || d.settings.currency
+  return {
+    ...t, accountName: acc(t.accountId), toAccountName: acc(t.toAccountId),
+    categoryName: cat ? (parent ? `${parent.name} / ${cat.name}` : cat.name) : '',
+    currency: curOf(t.accountId), toCurrency: t.toAccountId ? curOf(t.toAccountId) : undefined,
+  }
 }
 
 export function replaceAllOp(d: LedgerData): Op {

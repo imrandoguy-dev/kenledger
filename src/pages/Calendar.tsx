@@ -6,6 +6,7 @@ import { Button, Money } from '../components/ui'
 import { dailySpend, rangeFor, sortTransactions, txTouches } from '../services/calculations'
 import { addDays, fromISODate, longDate, shiftMonth, startOfWeek, today } from '../utils/dates'
 import { compact } from '../utils/currency'
+import { useBaseTransactions, useFx } from '../store/fxStore'
 import { TransactionItem } from '../components/TransactionItem'
 
 export function Calendar() {
@@ -13,10 +14,13 @@ export function Calendar() {
   const { scope, openTx } = useUi()
   const [month, setMonth] = useState(today().slice(0, 8) + '01')
   const [sel, setSel] = useState(today())
-  const cur = data.settings.currency
+  const { curOf, base } = useFx()
+  const { txs: baseTxs } = useBaseTransactions()
+  const cur = scope ? curOf(scope) : base
+  const source = scope ? data.transactions : baseTxs
   const ws = data.settings.weekStart
   const range = rangeFor('month', month, ws)
-  const spend = dailySpend(data.transactions, range, scope || undefined)
+  const spend = dailySpend(source, range, scope || undefined)
   const max = Math.max(1, ...Object.values(spend))
   const monthTotal = Object.values(spend).reduce((s, v) => s + v, 0)
 
@@ -27,7 +31,7 @@ export function Calendar() {
   const dow = Array.from({ length: 7 }, (_, i) => fromISODate(addDays(first, i)).toLocaleDateString('en-US', { weekday: 'short' }))
 
   const dayTx = sortTransactions(data.transactions.filter((t) => t.date === sel && (!scope || txTouches(t, scope))), 'newest')
-  const daySpent = dayTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  const daySpent = source.filter((t) => t.date === sel && t.type === 'expense' && (!scope || t.accountId === scope)).reduce((s, t) => s + t.amount, 0)
   const t0 = today()
 
   return (

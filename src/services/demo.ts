@@ -11,6 +11,8 @@ export function demoLedger(name = 'Julian'): LedgerData {
   const hdfc = { id: uid(), name: 'HDFC Savings', type: 'savings' as const, startingBalance: 50000, currency: 'INR', icon: '🏦', color: '#174C3B', createdAt: now }
   const cash = { id: uid(), name: 'Cash', type: 'cash' as const, startingBalance: 2000, currency: 'INR', icon: '💵', color: '#8A6A3F', createdAt: now }
   const icici = { id: uid(), name: 'ICICI Credit', type: 'credit' as const, startingBalance: 0, currency: 'INR', icon: '💳', color: '#4C7A8C', createdAt: now }
+  const wise = { id: uid(), name: 'Wise USD', type: 'wallet' as const, startingBalance: 1000, currency: 'USD', icon: '💰', color: '#6B5B8A', createdAt: now }
+  const enbd = { id: uid(), name: 'Emirates NBD', type: 'bank' as const, startingBalance: 4200, currency: 'AED', icon: '🏛️', color: '#B4654A', createdAt: now }
   const tx: Transaction[] = []
   const add = (daysAgo: number, type: Transaction['type'], accountId: string, amount: number, description: string, categoryId?: string, toAccountId?: string) =>
     tx.push({ id: uid(), type, accountId, amount, description, categoryId, toAccountId, date: addDays(t0, -daysAgo), createdAt: new Date(Date.now() - daysAgo * 864e5).toISOString() })
@@ -48,10 +50,18 @@ export function demoLedger(name = 'Julian'): LedgerData {
   add(47, 'expense', icici.id, 5600, 'Train tickets', 'transport.train')
   add(52, 'expense', hdfc.id, 1300, 'Doctor visit', 'health.doctor')
   add(58, 'expense', hdfc.id, 2600, 'Groceries', 'food.groceries')
+  // Foreign-currency accounts
+  add(2, 'expense', wise.id, 15.99, 'Spotify Premium', 'entertainment.subscriptions')
+  add(9, 'expense', wise.id, 120, 'Domain renewal', 'other.miscellaneous')
+  add(20, 'income', wise.id, 650, 'Client invoice', 'income.freelance')
+  add(5, 'expense', enbd.id, 186.5, 'Carrefour', 'food.groceries')
+  add(11, 'expense', enbd.id, 45, 'Careem', 'transport.taxi')
+  add(16, 'transfer', wise.id, 200, 'Wise → HDFC', undefined, hdfc.id)
+  tx[tx.length - 1].toAmount = 19250
 
   return {
     ...base,
-    accounts: [hdfc, cash, icici],
+    accounts: [hdfc, cash, icici, wise, enbd],
     transactions: tx,
     settings: { ...base.settings, name, onboarded: true, defaultAccountId: hdfc.id },
   }
