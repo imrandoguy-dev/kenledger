@@ -10,11 +10,12 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 
 // SINGLEFILE=1 builds a self-contained preview (no service worker).
 const single = process.env.SINGLEFILE === '1'
+const BUILD_TIME = new Date().toISOString()
 
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     // Netlify sets COMMIT_REF during builds.
     __COMMIT__: JSON.stringify((process.env.COMMIT_REF ?? '').slice(0, 7)),
   },
@@ -22,6 +23,14 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // /version.json lets the app ask which build is live (see src/pwa.ts).
+    {
+      name: 'kenledger-version',
+      generateBundle() {
+        if (single) return
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ built: BUILD_TIME, commit: (process.env.COMMIT_REF ?? '').slice(0, 7) }) })
+      },
+    },
     single
       ? viteSingleFile()
       : VitePWA({

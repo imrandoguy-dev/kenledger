@@ -30,9 +30,48 @@ function watch(r: ServiceWorkerRegistration) {
   })
 }
 
+/**
+ * Ask the server directly which build is live. This doesn't depend on the
+ * service worker noticing the change, which some phones do unreliably.
+ */
+async function newerOnServer(): Promise<boolean> {
+  try {
+    const r = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+    if (!r.ok) return false
+    const v = (await r.json()) as { built?: string }
+    return !!v.built && v.built !== BUILD_TIME
+  } catch { return false } // offline, or a preview build without version.json
+}
+
 async function poll() {
-  if (!registration) return
-  try { await registration.update() } catch { /* offline */ }
+  if (registration) { try { await registration.update() } catch { /* offline */ } }
+  if (!updateReady && await newerOnServer()) markReady()
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** Last resort: drop the cached app (not your data, which is in the sheet + localStorage) and reload fresh. */
+async function hardReload() {
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.() ?? []
+    await Promise.all(regs.map((r) => r.unregister()))
+    const keys = await caches?.keys?.() ?? []
+    await Promise.all(keys.map((k) => caches.delete(k)))
+  } catch { /* ignore */ }
+  location.replace(`${location.pathname}?v=${Date.now()}${location.hash}`)
+}
+
+/** Switch to the newest version, falling back to a clean reload if the service worker doesn't cooperate. */
+async function installLatest() {
+  if (registration && !registration.waiting) {
+    await poll()
+    for (let i = 0; i < 40 && !registration.waiting; i++) await sleep(250)
+  }
+  if (registration?.waiting) {
+    void applyUpdate(true) // reloads once the new version takes over
+    await sleep(4000)
+  }
+  await hardReload() // only reached if the normal path didn't reload
 }
 
 const applyUpdate = registerSW({
@@ -50,10 +89,10 @@ const applyUpdate = registerSW({
 
 /** Ask the server whether a newer version exists. Resolves true if one is ready to install. */
 export async function checkForUpdate(): Promise<boolean> {
-  if (!registration) return updateReady
+  if (!registration) { if (!updateReady && await newerOnServer()) markReady(); return updateReady }
   await poll()
   // Give a freshly found version a few seconds to finish downloading.
-  for (let i = 0; i < 40 && !updateReady && registration.installing; i++) await new Promise((r) => setTimeout(r, 250))
+  for (let i = 0; i < 40 && !updateReady && registration.installing; i++) await sleep(250)
   if (registration.waiting && navigator.serviceWorker.controller) markReady()
   return updateReady
 }
@@ -68,7 +107,7 @@ export function useAppUpdate() {
   return {
     ready: updateReady,
     /** Switches to the new version and reloads the page. */
-    apply: () => applyUpdate(true),
+    apply: installLatest,
     dismiss: () => { updateReady = false; emit() },
   }
 }
