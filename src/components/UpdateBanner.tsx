@@ -1,11 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Loader2, Sparkles, X } from 'lucide-react'
 import { useAppUpdate } from '../pwa'
 import { useLedger } from '../store/ledgerStore'
 
+/** How long after opening the app a found update is applied straight away. */
+const FRESH_OPEN_MS = 15_000
+const openedAt = Date.now()
+
 /**
- * "A new version is ready" card. Appears after a new deploy reaches Netlify.
- * Waits for unsaved changes to reach the sheet before reloading.
+ * New deploys install themselves:
+ * - right after the app is opened (nothing typed yet), or
+ * - when the app goes to the background (switching apps, locking the phone),
+ * but only once every change has reached the sheet. While the app is in use
+ * the card below is shown instead, so a half-filled form is never wiped.
  */
 export function UpdateBanner() {
   const { ready, apply, dismiss } = useAppUpdate()
@@ -14,8 +21,19 @@ export function UpdateBanner() {
   const [blocked, setBlocked] = useState(false)
   const syncRef = useRef(sync)
   syncRef.current = sync
-  if (!ready) return null
   const unsaved = sync.pending > 0 || sync.saving
+
+  useEffect(() => {
+    if (!ready) return
+    const clean = () => !syncRef.current.pending && !syncRef.current.saving
+    const tryApply = () => { if (clean()) void apply() }
+    if (Date.now() - openedAt < FRESH_OPEN_MS || document.visibilityState === 'hidden') tryApply()
+    const onHide = () => { if (document.visibilityState === 'hidden') tryApply() }
+    document.addEventListener('visibilitychange', onHide)
+    return () => document.removeEventListener('visibilitychange', onHide)
+  }, [ready, unsaved, apply])
+
+  if (!ready) return null
 
   const update = async () => {
     setBusy(true)

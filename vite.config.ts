@@ -25,7 +25,8 @@ export default defineConfig({
     single
       ? viteSingleFile()
       : VitePWA({
-          // 'prompt': a new deploy waits until the user taps "Update" (see src/pwa.ts).
+          // 'prompt' keeps control in our hands: UpdateBanner applies new deploys
+          // automatically when it's safe (on open, or when the app is backgrounded).
           registerType: 'prompt',
           injectRegister: false,
           includeAssets: ['favicon.svg', 'icons/*.png'],
@@ -47,6 +48,7 @@ export default defineConfig({
           workbox: {
             globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
             navigateFallback: '/index.html',
+            cleanupOutdatedCaches: true,
           },
         }),
   ],

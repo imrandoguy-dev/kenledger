@@ -10,7 +10,7 @@ export const APP_VERSION = __APP_VERSION__
 export const BUILD_TIME = __BUILD_TIME__
 export const COMMIT = __COMMIT__
 
-const CHECK_EVERY = 30 * 60 * 1000 // also checks whenever the app comes back to the foreground
+const CHECK_EVERY = 10 * 60 * 1000 // also checks whenever the app comes back to the foreground
 
 let updateReady = false
 let registration: ServiceWorkerRegistration | undefined
@@ -41,6 +41,7 @@ const applyUpdate = registerSW({
     registration = r
     if (!r) return
     watch(r)
+    void poll() // check for a new deploy as soon as the app opens
     setInterval(() => { void poll() }, CHECK_EVERY)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void poll() })
     window.addEventListener('online', () => { void poll() })

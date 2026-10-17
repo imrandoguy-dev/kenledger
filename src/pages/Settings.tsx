@@ -238,7 +238,7 @@ function Action({ icon, title, body, onClick, danger, disabled }: { icon: ReactN
   )
 }
 
-/** Version info and a manual "Check for updates". New versions also show a popup on their own. */
+/** Version info and a manual "Check for updates". New versions also install on their own. */
 function AppVersion() {
   const { ready, apply } = useAppUpdate()
   const [state, setState] = useState<'idle' | 'checking' | 'latest'>('idle')
