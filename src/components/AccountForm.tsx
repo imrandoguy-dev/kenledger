@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { AccountType } from '../types/ledger'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { Button, Sheet } from './ui'
-import { ACCOUNT_COLORS, ACCOUNT_ICONS, ACCOUNT_TYPES, CURRENCIES } from '../utils/constants'
+import { ACCOUNT_COLORS, ACCOUNT_TYPES, CURRENCIES } from '../utils/constants'
+import { IconPicker } from './IconPicker'
 import { currencyMeta, parseAmount } from '../utils/currency'
 import { navigate } from '../router'
 
@@ -93,13 +94,7 @@ export function AccountForm() {
         </fieldset>
 
         <div className="card p-5">
-          <p className="eyebrow mb-3">Icon</p>
-          <div className="flex flex-wrap gap-2">
-            {ACCOUNT_ICONS.map((i) => (
-              <button type="button" key={i} aria-label={`Icon ${i}`} aria-pressed={icon === i} onClick={() => setIcon(i)}
-                className={`grid h-10 w-10 place-items-center rounded-full text-lg ${icon === i ? 'ring-2 ring-primary bg-card-2' : 'bg-card-2'}`}>{i}</button>
-            ))}
-          </div>
+          <IconPicker value={icon} onChange={setIcon} />
           <p className="eyebrow mb-3 mt-5">Colour</p>
           <div className="flex flex-wrap gap-2.5">
             {ACCOUNT_COLORS.map((c) => (

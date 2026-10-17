@@ -56,6 +56,8 @@ export interface Settings {
   /** Colour palette id (built-in or custom). */
   palette?: string
   customPalettes?: CustomPalette[]
+  /** Your account icon choices (emoji). Unset = the built-in set. */
+  accountIcons?: string[]
 }
 
 export interface LedgerData {
