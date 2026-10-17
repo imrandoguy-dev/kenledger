@@ -8,16 +8,18 @@
   --card: #FCFBF6;
   --card-2: #EFEBDF;
   --ink: #17211D;
-  --muted: #7B817B;
+  --muted: #666C66;
   --faint: #A6AAA3;
   --line: #E7E4DA;
   --primary: #174C3B;
   --primary-ink: #F5F2E9;
   --deep: #102F27;
   --pos: #2F6B55;
-  --neg: #B4654A;
+  --neg: #A65A40;
   --neg-soft: #F3E3DA;
   --pos-soft: #DDE8E0;
+  --primary-text: #174C3B;
+  --nav-ink: #F5F2E9;
   --shadow: 0 1px 2px rgba(23, 33, 29, .04), 0 8px 24px -12px rgba(23, 33, 29, .10);
   color-scheme: light;
 }
@@ -38,6 +40,8 @@
   --neg: #E0977C;
   --neg-soft: #3A2620;
   --pos-soft: #1E3A2F;
+  --primary-text: #7FBF9E;
+  --nav-ink: #EDEAE0;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
   color-scheme: dark;
 }
@@ -58,10 +62,15 @@
   --color-neg: var(--neg);
   --color-neg-soft: var(--neg-soft);
   --color-pos-soft: var(--pos-soft);
+  --color-nav-ink: var(--nav-ink);
   --shadow-soft: var(--shadow);
 }
 
 html, body { background: var(--bg); color: var(--ink); }
+
+/* Accent used as text: some palettes (e.g. marigold, lime) need a deeper shade to stay
+   readable on light cards. Unlayered, so it wins over the Tailwind utility. */
+.text-primary { color: var(--primary-text); }
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

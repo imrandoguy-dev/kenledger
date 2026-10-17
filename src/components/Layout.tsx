@@ -56,7 +56,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
         <div className="mx-auto flex h-[64px] max-w-md items-center justify-between rounded-full bg-deep px-2.5 shadow-2xl">
           {[items[0], items[1]].map((it) => <BarItem key={it.label} route={route} {...it} />)}
           <button onClick={add} aria-label="Add expense"
-            className="grid h-12 w-12 place-items-center rounded-full bg-[#F5F2E9] text-[#102F27] shadow-md transition-transform active:scale-95">
+            className="grid h-12 w-12 place-items-center rounded-full bg-nav-ink text-deep shadow-md transition-transform active:scale-95">
             <Plus size={24} strokeWidth={2.2} />
           </button>
           {[items[2], items[3]].map((it) => <BarItem key={it.label} route={route} {...it} />)}
@@ -70,7 +70,7 @@ function BarItem({ r, short, icon: I, route }: { r: Route; short: string; icon: 
   const active = isActive(route, r) || (r.name === 'activity' && (route.name === 'calendar' || route.name === 'convert'))
   return (
     <a href={href(r)} aria-label={short} aria-current={active ? 'page' : undefined}
-      className={`grid h-11 w-11 place-items-center rounded-full transition-colors ${active ? 'bg-white/12 text-[#F5F2E9]' : 'text-[#F5F2E9]/55 hover:text-[#F5F2E9]'}`}>
+      className={`grid h-11 w-11 place-items-center rounded-full transition-colors ${active ? 'bg-white/12 text-nav-ink' : 'text-nav-ink/55 hover:text-nav-ink'}`}>
       <I size={20} strokeWidth={1.8} />
     </a>
   )

@@ -19,21 +19,22 @@ import { AccountForm } from './components/AccountForm'
 import { PrintDialog } from './components/PrintReport'
 import { Toaster } from './components/Toaster'
 import { UpdateBanner } from './components/UpdateBanner'
+import { applyTokens, findPalette } from './theme/palettes'
 
 function useTheme() {
   const { data } = useLedger()
-  const theme = data.settings.theme
+  const { theme, palette: paletteId, customPalettes } = data.settings
+  const palette = findPalette(paletteId, customPalettes)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && mq.matches)
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0E1A16' : '#F5F2E9')
+      const mode = theme === 'dark' || (theme === 'system' && mq.matches) ? 'dark' : 'light'
+      applyTokens(palette[mode], mode)
     }
     apply()
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
-  }, [theme])
+  }, [theme, palette])
 }
 
 /** Keyboard shortcut: "n" (or "+") opens a new expense from anywhere. */

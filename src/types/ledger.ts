@@ -1,3 +1,5 @@
+import type { CustomPalette } from '../theme/palettes'
+
 export type AccountType = 'cash' | 'bank' | 'savings' | 'credit' | 'wallet' | 'other'
 export type TxType = 'expense' | 'income' | 'transfer'
 export type Theme = 'system' | 'light' | 'dark'
@@ -51,6 +53,9 @@ export interface Settings {
   dateFormat: 'short' | 'iso' | 'dmy'
   defaultAccountId?: string
   onboarded: boolean
+  /** Colour palette id (built-in or custom). */
+  palette?: string
+  customPalettes?: CustomPalette[]
 }
 
 export interface LedgerData {

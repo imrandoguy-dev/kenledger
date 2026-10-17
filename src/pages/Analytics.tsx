@@ -7,6 +7,7 @@ import { SpendingDonut, CategoryBreakdown, TrendChart } from '../components/Char
 import { categoryBreakdown, rangeFor, summarize, trend } from '../services/calculations'
 import { addDays, fromISODate, shiftMonth, shortDate, today } from '../utils/dates'
 import { money } from '../utils/currency'
+import { findPalette } from '../theme/palettes'
 import { useBaseTransactions, useFx } from '../store/fxStore'
 
 type P = 'week' | 'month' | 'year'
@@ -26,7 +27,10 @@ export function Analytics() {
   const cur = acc ? curOf(acc) : base
   const source = acc ? data.transactions : baseTxs
   const sum = summarize(source, range, acc)
-  const slices = categoryBreakdown(source, range, data.categories, acc)
+  // Palettes with their own chart colours colour the biggest categories with them, in order.
+  const chartColors = findPalette(data.settings.palette, data.settings.customPalettes).chart
+  const slices = categoryBreakdown(source, range, data.categories, acc).map((sl, i) =>
+    chartColors.length ? { ...sl, color: chartColors[i] ?? 'var(--faint)' } : sl)
   const points = trend(source, period, range, ws, acc)
 
   // Previous period for comparison

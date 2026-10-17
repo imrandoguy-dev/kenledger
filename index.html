@@ -11,6 +11,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>Kenledger</title>
+    <script>
+      // Paint in the last-used palette before the app loads (no flash of the default colours).
+      try {
+        var l = JSON.parse(localStorage.getItem('kenledger:look') || 'null')
+        if (l && l.vars) {
+          var r = document.documentElement
+          l.vars.forEach(function (v) { r.style.setProperty(v[0], v[1]) })
+          r.dataset.theme = l.mode; r.style.colorScheme = l.mode
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app-root"></div>

@@ -19,7 +19,7 @@ A calm, private notebook for your money. Record expenses across multiple account
 - Transfers between currencies record what was sent and what was received
 - Google Sheet as the only storage, synced across all your devices
 - CSV export, JSON backup + restore, clear all
-- Light / Dark / System theme (dark is designed, not inverted)
+- Light / Dark / System theme, with colour palettes: Kenledger, Midnight Peach, Clay & Sky, Moss & Marigold, Monochrome Lime, plus your own named palettes (Settings → Appearance). Palette choice syncs through the sheet.
 - PWA: installable; shows a "New version available" popup after each deploy, plus Settings → Check for updates
 - Keyboard: press `n` anywhere to add an expense; accessible dialogs with focus trap
 

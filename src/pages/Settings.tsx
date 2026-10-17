@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Download, Upload, FileSpreadsheet, Trash2, Sparkles, Plus, X, ShieldCheck, Smartphone, RefreshCw, Unlink, ExternalLink, Link2, ArrowRightLeft } from 'lucide-react'
 import { SyncBadge } from '../components/SyncBadge'
+import { PalettePicker } from '../components/PalettePicker'
 import { useLedger, useUi } from '../store/ledgerStore'
 import { PageHeader } from '../components/Layout'
 import { Button, Confirm, Segmented, Bubble } from '../components/ui'
@@ -104,6 +105,7 @@ export function Settings() {
           <Segmented<Theme> label="Theme" value={s.theme} onChange={(t) => updateSettings({ theme: t })}
             options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} />
         </div>
+        <PalettePicker />
         <Row label="Main currency" hint="Totals, analytics and reports use this">
           <select className="select max-w-[150px]" value={s.currency} onChange={(e) => updateSettings({ currency: e.target.value })}>
             {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
