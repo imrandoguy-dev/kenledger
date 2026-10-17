@@ -67,18 +67,24 @@ async function hardReload() {
   location.replace(`${location.pathname}?v=${Date.now()}${location.hash}`)
 }
 
+const UPDATING = 'kl-updating'
+
 /** Switch to the newest version, falling back to a clean reload if the service worker doesn't cooperate. */
 async function installLatest() {
-  if (registration && !registration.waiting) {
-    await poll()
-    for (let i = 0; i < 40 && !registration.waiting; i++) await sleep(250)
-  }
-  if (registration?.waiting) {
-    void applyUpdate(true) // reloads once the new version takes over
-    await sleep(4000)
-  }
-  await hardReload() // only reached if the normal path didn't reload
+  await poll()
+  // New versions take over on their own (skipWaiting); give a download in progress time to finish.
+  for (let i = 0; i < 40 && registration?.installing; i++) await sleep(250)
+  if (registration?.waiting) { void applyUpdate(true); await sleep(1500) } // versions from before skipWaiting
+  try { sessionStorage.setItem(UPDATING, '1') } catch { /* ignore */ }
+  location.reload()
 }
+
+/** Right after an update reload: if we somehow still got the old app, clear it out and load fresh. */
+void (async () => {
+  let pending = false
+  try { pending = sessionStorage.getItem(UPDATING) === '1'; sessionStorage.removeItem(UPDATING) } catch { /* ignore */ }
+  if (pending && await newerOnServer()) await hardReload()
+})()
 
 const applyUpdate = registerSW({
   onNeedRefresh: markReady,

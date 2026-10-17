@@ -37,8 +37,7 @@ export default defineConfig({
     single
       ? viteSingleFile()
       : VitePWA({
-          // 'prompt' keeps control in our hands: UpdateBanner applies new deploys
-          // automatically when it's safe (on open, or when the app is backgrounded).
+          // 'prompt' = no surprise reloads: UpdateBanner asks before switching pages over.
           registerType: 'prompt',
           injectRegister: false,
           includeAssets: ['favicon.png', 'logo.png', 'icons/*.png'],
@@ -61,6 +60,10 @@ export default defineConfig({
             globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
             navigateFallback: '/index.html',
             cleanupOutdatedCaches: true,
+            // Take over as soon as a new version downloads. Otherwise it waits for
+            // every Kenledger tab to close, which on a phone can be never.
+            skipWaiting: true,
+            clientsClaim: true,
           },
         }),
   ],
