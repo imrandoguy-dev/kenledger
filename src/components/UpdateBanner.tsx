@@ -11,6 +11,7 @@ export function UpdateBanner() {
   const { ready, apply, dismiss } = useAppUpdate()
   const { sync, retrySync } = useLedger()
   const [busy, setBusy] = useState(false)
+  const [blocked, setBlocked] = useState(false)
   const syncRef = useRef(sync)
   syncRef.current = sync
   if (!ready) return null
@@ -25,6 +26,12 @@ export function UpdateBanner() {
         await new Promise((r) => setTimeout(r, 500))
         if (!syncRef.current.pending && !syncRef.current.saving) break
       }
+      // Never reload with changes that haven't reached the sheet (e.g. offline): they'd be lost.
+      if (syncRef.current.pending || syncRef.current.saving) {
+        setBusy(false)
+        setBlocked(true)
+        return
+      }
     }
     await apply()
   }
@@ -35,7 +42,7 @@ export function UpdateBanner() {
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10"><Sparkles size={18} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-semibold">New version available</p>
-          <p className="text-[12px] text-[#F5F2E9]/70">{unsaved ? 'Your changes will save first.' : 'Tap update to get the latest Kenledger.'}</p>
+          <p className="text-[12px] text-[#F5F2E9]/70">{blocked ? 'Some changes aren’t saved to your sheet yet. Reconnect, then tap Update again.' : unsaved ? 'Your changes will save first.' : 'Tap update to get the latest Kenledger.'}</p>
         </div>
         <button onClick={update} disabled={busy}
           className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#F5F2E9] px-4 text-[13px] font-semibold text-[#102F27] disabled:opacity-70">
