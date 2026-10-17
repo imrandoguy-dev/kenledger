@@ -18,6 +18,7 @@ import { TransactionDetail } from './components/TransactionDetail'
 import { AccountForm } from './components/AccountForm'
 import { PrintDialog } from './components/PrintReport'
 import { Toaster } from './components/Toaster'
+import { UpdateBanner } from './components/UpdateBanner'
 
 function useTheme() {
   const { data } = useLedger()
@@ -98,6 +99,7 @@ export default function App() {
       <FxProvider>
       <UiProvider>
         <Shell />
+        <UpdateBanner />
       </UiProvider>
       </FxProvider>
     </LedgerProvider>

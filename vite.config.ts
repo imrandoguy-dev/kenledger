@@ -3,18 +3,31 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { viteSingleFile } from 'vite-plugin-singlefile'
+import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 // SINGLEFILE=1 builds a self-contained preview (no service worker).
 const single = process.env.SINGLEFILE === '1'
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    // Netlify sets COMMIT_REF during builds.
+    __COMMIT__: JSON.stringify((process.env.COMMIT_REF ?? '').slice(0, 7)),
+  },
+  resolve: single ? { alias: { 'virtual:pwa-register': fileURLToPath(new URL('./src/pwa-register-stub.ts', import.meta.url)) } } : undefined,
   plugins: [
     react(),
     tailwindcss(),
     single
       ? viteSingleFile()
       : VitePWA({
-          registerType: 'autoUpdate',
+          // 'prompt': a new deploy waits until the user taps "Update" (see src/pwa.ts).
+          registerType: 'prompt',
+          injectRegister: false,
           includeAssets: ['favicon.svg', 'icons/*.png'],
           manifest: {
             name: 'Kenledger',

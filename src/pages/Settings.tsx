@@ -9,7 +9,7 @@ import { readBackupFile } from '../services/import'
 import { demoLedger } from '../services/demo'
 import { CURRENCIES } from '../utils/constants'
 import type { LedgerData, Theme } from '../types/ledger'
-import { useInstallPrompt } from '../pwa'
+import { APP_VERSION, BUILD_TIME, COMMIT, checkForUpdate, useAppUpdate, useInstallPrompt } from '../pwa'
 import scriptSource from '../../google-apps-script/Code.gs?raw'
 
 const SCRIPT_VERSION = Number(/const VERSION = (\d+)/.exec(scriptSource)?.[1] ?? 1)
@@ -62,7 +62,7 @@ export function Settings() {
 
   return (
     <>
-      <PageHeader title="Settings" eyebrow="Kenledger · Version 1.0" />
+      <PageHeader title="Settings" eyebrow={`Kenledger · Version ${APP_VERSION}`} />
 
       <Group title="Google Sheet">
         {demo ? (
@@ -181,6 +181,8 @@ export function Settings() {
         <p>{demo ? 'Demo mode: changes live only in this tab and disappear when you close it.' : 'Your ledger lives only in your own Google Sheet — this browser just remembers which sheet to open. Connect any other device with the same Web app URL and secret.'}</p>
       </div>
 
+      <AppVersion />
+
       {install.canInstall && (
         <button onClick={install.prompt} className="card mt-3 flex w-full items-center gap-3 p-4 text-left hover:brightness-[.99]">
           <Bubble size={40}><Smartphone size={18} className="text-primary" /></Bubble>
@@ -188,7 +190,7 @@ export function Settings() {
         </button>
       )}
 
-      <p className="mt-8 text-center text-[12px] text-faint">Kenledger 1.0 · {data.transactions.length} transactions · {data.accounts.length} accounts</p>
+      <p className="mt-8 text-center text-[12px] text-faint">Kenledger {APP_VERSION} · {data.transactions.length} transactions · {data.accounts.length} accounts</p>
 
       <Confirm open={!!pending} title="Restore backup?" danger={false}
         body={pending && <>This replaces everything in your ledger with <b className="text-ink">{pending.accounts.length} accounts</b> and <b className="text-ink">{pending.transactions.length} transactions</b> from the backup.</>}
@@ -231,5 +233,34 @@ function Action({ icon, title, body, onClick, danger, disabled }: { icon: ReactN
       <span className={`grid h-10 w-10 place-items-center rounded-full ${danger ? 'bg-neg-soft text-neg' : 'bg-card-2 text-primary'}`}>{icon}</span>
       <span><span className={`block text-[15px] font-semibold ${danger ? 'text-neg' : ''}`}>{title}</span><span className="text-[13px] text-muted">{body}</span></span>
     </button>
+  )
+}
+
+/** Version info and a manual "Check for updates". New versions also show a popup on their own. */
+function AppVersion() {
+  const { ready, apply } = useAppUpdate()
+  const [state, setState] = useState<'idle' | 'checking' | 'latest'>('idle')
+  const built = new Date(BUILD_TIME).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return (
+    <section className="mt-6">
+      <h2 className="eyebrow mb-2 px-1">App</h2>
+      <div className="card flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold">Version {APP_VERSION}</p>
+          <p className="text-[12px] text-muted">Updated {built}{COMMIT ? ` · ${COMMIT}` : ''}</p>
+        </div>
+        {ready ? (
+          <Button size="sm" onClick={() => void apply()}>Update now</Button>
+        ) : (
+          <Button size="sm" variant="soft" disabled={state === 'checking'} onClick={async () => {
+            setState('checking')
+            const found = await checkForUpdate()
+            setState(found ? 'idle' : 'latest')
+          }}>
+            {state === 'checking' ? 'Checking…' : state === 'latest' ? 'Up to date ✓' : 'Check for updates'}
+          </Button>
+        )}
+      </div>
+    </section>
   )
 }

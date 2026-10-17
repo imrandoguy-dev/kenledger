@@ -20,7 +20,7 @@ A calm, private notebook for your money. Record expenses across multiple account
 - Google Sheet as the only storage, synced across all your devices
 - CSV export, JSON backup + restore, clear all
 - Light / Dark / System theme (dark is designed, not inverted)
-- PWA: installable
+- PWA: installable; shows a "New version available" popup after each deploy, plus Settings → Check for updates
 - Keyboard: press `n` anywhere to add an expense; accessible dialogs with focus trap
 
 ## Architecture
@@ -58,6 +58,10 @@ npm run build     # outputs dist/ with service worker
 1. `git init && git add . && git commit -m "Kenledger v1" && git remote add origin git@github.com:<you>/kenledger.git && git push -u origin main`
 2. Netlify → **Add new site → Import from Git** → pick the repo. `netlify.toml` already sets build `npm run build`, publish `dist`, Node 22.
 3. Every push to `main` redeploys automatically.
+
+### Updates on devices
+
+Kenledger runs as an installable app (PWA), so a phone keeps using the copy it already downloaded until it updates. After each Netlify deploy, open devices notice the new version (on open, when the app returns to the foreground, and every 30 minutes) and show **New version available → Update**. Unsaved changes are sent to the sheet before it reloads. **Settings → App → Check for updates** checks on demand. To release a numbered version, bump `version` in `package.json`; Settings shows it with the Netlify commit.
 
 ## Data: your Google Sheet
 
