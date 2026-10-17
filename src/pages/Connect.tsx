@@ -106,7 +106,7 @@ export function Loading({ label = 'Opening your sheet…' }: { label?: string })
   return (
     <div className="grid min-h-dvh place-items-center">
       <div className="flex flex-col items-center gap-4 text-muted">
-        <Logo size={56} />
+        <Logo size={96} />
         <p className="flex items-center gap-2 text-sm"><Loader2 size={16} className="animate-spin" /> {label}</p>
       </div>
     </div>

@@ -77,12 +77,7 @@ function BarItem({ r, short, icon: I, route }: { r: Route; short: string; icon: 
 }
 
 export function Logo({ size = 30 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <rect width="64" height="64" rx="18" fill="var(--primary)" />
-      <path d="M22 17v30M22 32l15-15M27 28l13 19" stroke="var(--primary-ink)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  )
+  return <img src="/logo.png" width={size} height={size} alt="" aria-hidden draggable={false} className="shrink-0 select-none object-contain" />
 }
 
 /** Page header with optional right-side slot; shows avatar → settings on mobile. */
