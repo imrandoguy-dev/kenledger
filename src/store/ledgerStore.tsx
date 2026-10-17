@@ -306,6 +306,7 @@ interface UiApi {
 }
 
 const UiCtx = createContext<UiApi | null>(null)
+const SCOPE_KEY = 'kenledger.scope'
 
 export function UiProvider({ children }: { children: ReactNode }) {
   const [txSheet, setTxSheet] = useState<TxSheetState | null>(null)
@@ -313,7 +314,12 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const [viewTx, setViewTx] = useState<Transaction | null>(null)
   const [print, setPrint] = useState<PrintPreset | null>(null)
   const [toast, setToast] = useState<Toast | null>(null)
-  const [scope, setScope] = useState('')
+  // Remember the chosen account on this device until the user picks another.
+  const [scope, setScopeState] = useState(() => { try { return localStorage.getItem(SCOPE_KEY) ?? '' } catch { return '' } })
+  const setScope = useCallback((id: string) => {
+    setScopeState(id)
+    try { if (id) localStorage.setItem(SCOPE_KEY, id); else localStorage.removeItem(SCOPE_KEY) } catch { /* noop */ }
+  }, [])
   const timer = useRef<number | undefined>(undefined)
 
   const notify = useCallback((message: string, action?: Toast['action']) => {

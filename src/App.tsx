@@ -60,7 +60,8 @@ function Shell() {
   useShortcuts()
 
   // Drop a stale account filter (e.g. after deleting the account).
-  useEffect(() => { if (scope && !account(scope)) setScope('') }, [scope, account, setScope])
+  // Only once the sheet has loaded, so a saved choice isn't dropped while accounts are still loading.
+  useEffect(() => { if (sync.status === 'ready' && scope && !account(scope)) setScope('') }, [sync.status, scope, account, setScope])
 
   if (sync.status === 'none') return <Connect />
   if (sync.status === 'loading') return <Loading />
