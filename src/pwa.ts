@@ -10,14 +10,18 @@ export const APP_VERSION = __APP_VERSION__
 export const BUILD_TIME = __BUILD_TIME__
 export const COMMIT = __COMMIT__
 
-const CHECK_EVERY = 10 * 60 * 1000 // also checks whenever the app comes back to the foreground
+const CHECK_EVERY = 5 * 60 * 1000 // also checks whenever the app comes back to the foreground
 
 let updateReady = false
+/** What the newest deploy changed, shown in the update popup. */
+let latestNote = ''
+let latestBuild = ''
+let dismissedBuild = ''
 let registration: ServiceWorkerRegistration | undefined
 const updateListeners = new Set<() => void>()
 const emit = () => updateListeners.forEach((l) => l())
 
-const markReady = () => { if (!updateReady) { updateReady = true; emit() } }
+const markReady = () => { if (!updateReady && dismissedBuild !== (latestBuild || 'sw')) { updateReady = true; emit() } }
 
 /** A new version is "ready" once its service worker has installed and is waiting to take over. */
 function watch(r: ServiceWorkerRegistration) {
@@ -38,14 +42,16 @@ async function newerOnServer(): Promise<boolean> {
   try {
     const r = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
     if (!r.ok) return false
-    const v = (await r.json()) as { built?: string }
-    return !!v.built && v.built !== BUILD_TIME
+    const v = (await r.json()) as { built?: string; note?: string }
+    if (!v.built || v.built === BUILD_TIME) return false
+    if (v.built !== latestBuild) { latestBuild = v.built; latestNote = v.note ?? ''; emit() }
+    return true
   } catch { return false } // offline, or a preview build without version.json
 }
 
 async function poll() {
   if (registration) { try { await registration.update() } catch { /* offline */ } }
-  if (!updateReady && await newerOnServer()) markReady()
+  if (await newerOnServer()) markReady()
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -89,11 +95,13 @@ const applyUpdate = registerSW({
 
 /** Ask the server whether a newer version exists. Resolves true if one is ready to install. */
 export async function checkForUpdate(): Promise<boolean> {
-  if (!registration) { if (!updateReady && await newerOnServer()) markReady(); return updateReady }
+  dismissedBuild = '' // asking explicitly always shows what's available
+  if (!registration) { if (await newerOnServer()) markReady(); return updateReady }
   await poll()
   // Give a freshly found version a few seconds to finish downloading.
   for (let i = 0; i < 40 && !updateReady && registration.installing; i++) await sleep(250)
   if (registration.waiting && navigator.serviceWorker.controller) markReady()
+  if (!updateReady && await newerOnServer()) markReady()
   return updateReady
 }
 
@@ -106,9 +114,11 @@ export function useAppUpdate() {
   }, [])
   return {
     ready: updateReady,
+    note: latestNote,
     /** Switches to the new version and reloads the page. */
     apply: installLatest,
-    dismiss: () => { updateReady = false; emit() },
+    /** Hide until a newer deploy than this one arrives. */
+    dismiss: () => { dismissedBuild = latestBuild || 'sw'; updateReady = false; emit() },
   }
 }
 

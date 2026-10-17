@@ -3,35 +3,18 @@ import { Loader2, Sparkles, X } from 'lucide-react'
 import { useAppUpdate } from '../pwa'
 import { useLedger } from '../store/ledgerStore'
 
-/** How long after opening the app a found update is applied straight away. */
-const FRESH_OPEN_MS = 15_000
-const openedAt = Date.now()
-
 /**
- * New deploys install themselves:
- * - right after the app is opened (nothing typed yet), or
- * - when the app goes to the background (switching apps, locking the phone),
- * but only once every change has reached the sheet. While the app is in use
- * the card below is shown instead, so a half-filled form is never wiped.
+ * Shown whenever a newer Kenledger is live. Nothing installs behind your back:
+ * tap Update and it saves any pending changes to the sheet first, then reloads.
  */
 export function UpdateBanner() {
-  const { ready, apply, dismiss } = useAppUpdate()
+  const { ready, note, apply, dismiss } = useAppUpdate()
   const { sync, retrySync } = useLedger()
   const [busy, setBusy] = useState(false)
   const [blocked, setBlocked] = useState(false)
   const syncRef = useRef(sync)
-  syncRef.current = sync
+  useEffect(() => { syncRef.current = sync })
   const unsaved = sync.pending > 0 || sync.saving
-
-  useEffect(() => {
-    if (!ready) return
-    const clean = () => !syncRef.current.pending && !syncRef.current.saving
-    const tryApply = () => { if (clean()) void apply() }
-    if (Date.now() - openedAt < FRESH_OPEN_MS || document.visibilityState === 'hidden') tryApply()
-    const onHide = () => { if (document.visibilityState === 'hidden') tryApply() }
-    document.addEventListener('visibilitychange', onHide)
-    return () => document.removeEventListener('visibilitychange', onHide)
-  }, [ready, unsaved, apply])
 
   if (!ready) return null
 
@@ -60,6 +43,7 @@ export function UpdateBanner() {
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10"><Sparkles size={18} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-semibold">New version available</p>
+          {note && !blocked && <p className="truncate text-[12px] text-nav-ink/90">What’s new: {note}</p>}
           <p className="text-[12px] text-nav-ink/70">{blocked ? 'Some changes aren’t saved to your sheet yet. Reconnect, then tap Update again.' : unsaved ? 'Your changes will save first.' : 'Tap update to get the latest Kenledger.'}</p>
         </div>
         <button onClick={update} disabled={busy}

@@ -5,12 +5,15 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 // SINGLEFILE=1 builds a self-contained preview (no service worker).
 const single = process.env.SINGLEFILE === '1'
 const BUILD_TIME = new Date().toISOString()
+/** The latest commit's title, shown as "What's new" in the update popup. */
+const NOTE = (() => { try { return execSync('git log -1 --format=%s', { encoding: 'utf8' }).trim() } catch { return '' } })()
 
 export default defineConfig({
   define: {
@@ -28,7 +31,7 @@ export default defineConfig({
       name: 'kenledger-version',
       generateBundle() {
         if (single) return
-        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ built: BUILD_TIME, commit: (process.env.COMMIT_REF ?? '').slice(0, 7) }) })
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ built: BUILD_TIME, note: NOTE, commit: (process.env.COMMIT_REF ?? '').slice(0, 7) }) })
       },
     },
     single
